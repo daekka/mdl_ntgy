@@ -11,7 +11,7 @@ import ast
 
 
 # Cargar las instrucciones del sistema con codificación UTF-8 explícita
-with open("pages\system_prompt.md", "r", encoding="utf-8") as f:
+with open("/pages/system_prompt.md", "r", encoding="utf-8") as f:
     system_instructions = f.read()
 
 
