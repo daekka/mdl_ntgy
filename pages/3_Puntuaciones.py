@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from openai import AzureOpenAI
 import httpx
 import json
+from openpyxl.styles import Alignment
 
 
 # Cargar las instrucciones del sistema con codificación UTF-8 explícita
@@ -49,7 +50,7 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
 
       # Accede al contenido de la respuesta
     event = completion.choices[0].message.content
-   
+    #st.write(event)
     return(event)
 
 
@@ -110,22 +111,38 @@ if uploaded_file is not None:
                             if "PREGUNTAS" in completado:
                                 if "Preguntas" not in df.columns:
                                     df["Preguntas"] = None
-                                df.at[i, "Preguntas"] = completado["PREGUNTAS"]
+                                # Si es una lista, unir elementos con retorno de carro
+                                if isinstance(completado["PREGUNTAS"], list):
+                                    df.at[i, "Preguntas"] = "\n".join(completado["PREGUNTAS"])
+                                else:
+                                    df.at[i, "Preguntas"] = completado["PREGUNTAS"]
                                 
                             if "ANALISIS" in completado:
                                 if "Análisis" not in df.columns:
                                     df["Análisis"] = None
-                                df.at[i, "Análisis"] = completado["ANALISIS"]
+                                # Si es una lista, unir elementos con retorno de carro
+                                if isinstance(completado["ANALISIS"], list):
+                                    df.at[i, "Análisis"] = "\n".join(completado["ANALISIS"])
+                                else:
+                                    df.at[i, "Análisis"] = completado["ANALISIS"]
                                 
                             if "RIESGOS" in completado:
                                 if "Riesgos" not in df.columns:
                                     df["Riesgos"] = None
-                                df.at[i, "Riesgos"] = completado["RIESGOS"]
+                                # Si es una lista, unir elementos con retorno de carro
+                                if isinstance(completado["RIESGOS"], list):
+                                    df.at[i, "Riesgos"] = "\n".join(completado["RIESGOS"])
+                                else:
+                                    df.at[i, "Riesgos"] = completado["RIESGOS"]
                                 
                             if "RECOMENDACIONES" in completado:
                                 if "Recomendaciones" not in df.columns:
                                     df["Recomendaciones"] = None
-                                df.at[i, "Recomendaciones"] = completado["RECOMENDACIONES"]
+                                # Si es una lista, unir elementos con retorno de carro
+                                if isinstance(completado["RECOMENDACIONES"], list):
+                                    df.at[i, "Recomendaciones"] = "\n".join(completado["RECOMENDACIONES"])
+                                else:
+                                    df.at[i, "Recomendaciones"] = completado["RECOMENDACIONES"]
                             
                             filas_completadas.append(i)
                             barra_progreso.progress((len(filas_completadas) / len(df)), text=progress_text)
@@ -162,8 +179,14 @@ if uploaded_file is not None:
                         
                         # Escribir campos adicionales en el Excel
                         for campo in campos_adicionales:
-                            if campo in df.columns and idx in df.index and not pd.isna(df.at[idx, campo]):
-                                ws.cell(row=excel_row, column=col_index_map[campo] + 1).value = df.at[idx, campo]
+                            if campo in df.columns and idx in df.index:
+                                valor = df.at[idx, campo]
+                                if valor is not None and not pd.isna(valor):
+                                    ws.cell(row=excel_row, column=col_index_map[campo] + 1).value = valor
+                                    # Configurar la celda para que muestre correctamente el texto con saltos de línea
+                                    cell = ws.cell(row=excel_row, column=col_index_map[campo] + 1)
+                                    if "\n" in str(valor):
+                                        cell.alignment = Alignment(wrapText=True)
 
                     # === Guardar el archivo con formato intacto ===
                     output = BytesIO()

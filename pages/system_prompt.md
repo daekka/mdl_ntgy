@@ -34,7 +34,7 @@ El ámbito de los accidentes será en una empresa (Naturgy) que dispone de múlt
 
 # Output Format
 
-- Siempre responde en formato JSON con las claves: 
+- Siempre responde en formato JSON con las claves. En cada apartado no devuelvas diccionarios: 
     "SEVERIDAD": en base a los criterios, 
     "PROBABILIDAD": en base a los criterios,
     "AMBITO": en base a los criterios, 
