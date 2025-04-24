@@ -3,3 +3,7 @@ pandas
 openpyxl
 xlsxwriter
 plotly
+pydantic
+openai
+httpx
+ast
