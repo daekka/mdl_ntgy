@@ -157,7 +157,7 @@ with st.expander("Configuración 📋", expanded=True):
         st.session_state.hora_inicial = hora_inicial
         
     with col3:
-        st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Metogalicia", icon="🌎")
+        st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Meteogalicia", icon="🌎")
         # Widget para cargar el archivo JSON meteorológico
         archivo_meteorologico = st.file_uploader("Cargar archivo JSON meteorológico", type=["json"])
         
