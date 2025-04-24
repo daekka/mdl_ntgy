@@ -6,6 +6,11 @@ from pydantic import BaseModel
 from openai import AzureOpenAI
 import httpx
 
+
+# Cargar las instrucciones del sistema con codificación UTF-8 explícita
+with open("pages\system_prompt.md", "r", encoding="utf-8") as f:
+    system_instructions = f.read()
+
 # Configura tu cliente de Azure OpenAI
 AZURE_CONFIG = {
     "deployment_name": "gpt-4o",
@@ -29,29 +34,22 @@ class CalendarEvent(BaseModel):
     date: str
     participants: list[str]
 
-# Realiza la solicitud al modelo desplegado
-completion = client.beta.chat.completions.parse(
-    model="gpt-4o",  # Este es el nombre del *deployment*, no el modelo base. Usa el que configuraste en Azure.
-    messages=[
-        {"role": "system", "content": "Extract the event information."},
-        {"role": "user", "content": "Alice and Bob are going to a science fair on Friday."},
-    ],
-    response_format=CalendarEvent,
-)
+def LLM_Consulta(client, system_prompt = "", descripcion =""):
+    # Realiza la solicitud al modelo desplegado
+    completion = client.beta.chat.completions.parse(
+        model="gpt-4o",  # Este es el nombre del *deployment*, no el modelo base. Usa el que configuraste en Azure.
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": descripcion},
+        ],
+        #response_format=CalendarEvent,
+    )
 
-event = completion.choices[0].message.parsed
+    event = completion.choices[0].message.parsed
 
-print(event)
-
-
+    print(event)
 
 
-def LLM_Consulta(fila):
-    return {
-        "Severidad": "Leve",
-        "Probabilidad": "Posible",
-        "Ámbito": "Puntual"
-    }
 
 st.title("Completar Excel con LLM")
 apikey = st.text_input("APIKEY", type ="password")
@@ -74,7 +72,16 @@ if uploaded_file is not None:
             if fila and "Severidad" in fila and "Probabilidad" in fila and "Ámbito" in fila:
                 cabecera_index = i
                 columnas = list(fila)
-                break
+
+                # Buscar la(s) columna(s) que contienen "Descripción"
+                columnas_descripcion = [col for col in columnas if "Descripción" in str(col)]
+                
+                if columnas_descripcion:
+                    print(f"Columna(s) con 'Descripción' encontrada(s): {columnas_descripcion}")
+                else:
+                    print("No se encontró ninguna columna con 'Descripción'")
+
+
 
         if cabecera_index is not None:
             with st.spinner("Generando archivo...", show_time=True):
@@ -85,7 +92,7 @@ if uploaded_file is not None:
 
                 for i, row in df.iterrows():
                     if pd.isna(row.get("Severidad")) and pd.isna(row.get("Probabilidad")) and pd.isna(row.get("Ámbito")):
-                        completado = LLM_Consulta(row)
+                        completado = LLM_Consulta(client, system_prompt= system_instructions, descripcion=row.get(columnas_descripcion))
                         df.at[i, "Severidad"] = completado["Severidad"]
                         df.at[i, "Probabilidad"] = completado["Probabilidad"]
                         df.at[i, "Ámbito"] = completado["Ámbito"]
