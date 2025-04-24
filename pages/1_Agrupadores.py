@@ -4,10 +4,26 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Agrupadores Prevención",
+    page_icon="🪪",
+    layout="wide",
+)
+
+# CSS personalizado para cambiar ancho del sidebar
+st.markdown("""
+    <style>
+        section[data-testid="stSidebar"] {
+            width: 275px !important;
+        }
+        section[data-testid="stSidebar"] > div:first-child {
+            width: 275px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 def main():
-    st.title("Agrupadores Prevención")
+    st.title("Agrupadores Prevención 🪪")
 
     # Subir archivos
     personal_file = st.file_uploader("Subir archivo Excel de Personal", type=["xlsx", "xls"])

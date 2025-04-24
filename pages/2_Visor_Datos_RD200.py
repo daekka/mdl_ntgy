@@ -8,6 +8,25 @@ import json
 import numpy as np  # Importa numpy
 
 
+st.set_page_config(
+    page_title="Radón-RD200",
+    page_icon="📈",
+    layout="wide",
+)
+
+
+# CSS personalizado para cambiar ancho del sidebar
+st.markdown("""
+    <style>
+        section[data-testid="stSidebar"] {
+            width: 275px !important;
+        }
+        section[data-testid="stSidebar"] > div:first-child {
+            width: 275px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 def cargar_datos_meteorologicos(archivo_json):
     """
     Carga datos meteorológicos desde un archivo JSON y crea un DataFrame pivotante.
@@ -119,9 +138,8 @@ if 'df_radon' not in st.session_state:
 if 'df_meteorologico' not in st.session_state:
     st.session_state.df_meteorologico = None
 
-# Streamlit app
-st.set_page_config(layout="wide")
-st.title("Visor de Datos de Radón")
+
+st.title("Visualizador de datos de Radón-RD200 y Meteorología 📈")
 
 # Panel de configuración en un expander (desplegado por defecto)
 with st.expander("Configuración", expanded=True):
@@ -139,6 +157,7 @@ with st.expander("Configuración", expanded=True):
         st.session_state.hora_inicial = hora_inicial
         
     with col3:
+        st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Metogalicia", icon="🌎")
         # Widget para cargar el archivo JSON meteorológico
         archivo_meteorologico = st.file_uploader("Cargar archivo JSON meteorológico", type=["json"])
         
