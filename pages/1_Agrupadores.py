@@ -29,10 +29,10 @@ def main():
     col1, col2 = st.columns(2)
     # Subir archivos
     with col1:
-        st.subheader("PERSONAL")
+        st.subheader("PERSONAL 👥")
         personal_file = st.file_uploader("Subir archivo Excel de PERSONAL", type=["xlsx", "xls"])
     with col2:
-        st.subheader("AGRPADORES")
+        st.subheader("AGRUPADORES 👷")
         agrupadores_file = st.file_uploader("Subir archivo Excel de AGRUPADORES", type=["xlsx", "xls"])
 
     if personal_file and agrupadores_file:
