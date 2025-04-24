@@ -5,6 +5,7 @@ from openpyxl import load_workbook
 from pydantic import BaseModel
 from openai import AzureOpenAI
 import httpx
+import json
 
 
 # Cargar las instrucciones del sistema con codificación UTF-8 explícita
@@ -29,25 +30,27 @@ client = AzureOpenAI(
     http_client=httpx_client
 )
 # Define tu modelo Pydantic
-class CalendarEvent(BaseModel):
-    name: str
-    date: str
-    participants: list[str]
+class puntuaciones(BaseModel):
+    Severidad: str
+    Probabilidad: str
+    Ámbito: str
 
 def LLM_Consulta(client, system_prompt = "", descripcion =""):
     # Realiza la solicitud al modelo desplegado
-    completion = client.beta.chat.completions.parse(
+    completion = client.chat.completions.create(
         model="gpt-4o",  # Este es el nombre del *deployment*, no el modelo base. Usa el que configuraste en Azure.
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": descripcion},
         ],
-        #response_format=CalendarEvent,
+        #response_format=puntuaciones,
     )
 
-    event = completion.choices[0].message.parsed
+      # Accede al contenido de la respuesta
+    event = completion.choices[0].message.content
+    st.write(event)
 
-    print(event)
+    return(event)
 
 
 
@@ -92,10 +95,13 @@ if uploaded_file is not None:
 
                 for i, row in df.iterrows():
                     if pd.isna(row.get("Severidad")) and pd.isna(row.get("Probabilidad")) and pd.isna(row.get("Ámbito")):
-                        completado = LLM_Consulta(client, system_prompt= system_instructions, descripcion=row.get(columnas_descripcion))
-                        df.at[i, "Severidad"] = completado["Severidad"]
-                        df.at[i, "Probabilidad"] = completado["Probabilidad"]
-                        df.at[i, "Ámbito"] = completado["Ámbito"]
+                        st.write (row.get(columnas_descripcion)[0])
+                        completado_raw = LLM_Consulta(client, system_prompt= system_instructions, descripcion=row.get(columnas_descripcion))
+                        completado = json.loads(completado_raw)
+                        st.write(type(completado))
+                        df.at[i, "Severidad"] = completado["SEVERIDAD"]
+                        df.at[i, "Probabilidad"] = completado["PROBABILIDAD"]
+                        df.at[i, "Ámbito"] = completado["AMBITO"]
                         filas_completadas.append(i)
 
                 st.success("Datos completados.")
