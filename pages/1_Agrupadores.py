@@ -29,9 +29,9 @@ def main():
     col1, col2 = st.columns(2)
     # Subir archivos
     with col1:
-        personal_file = st.file_uploader("Subir archivo Excel de Personal", type=["xlsx", "xls"])
+        personal_file = st.file_uploader("Subir archivo Excel de PERSONAL", type=["xlsx", "xls"])
     with col2:
-        agrupadores_file = st.file_uploader("Subir archivo Excel de Agrupadores", type=["xlsx", "xls"])
+        agrupadores_file = st.file_uploader("Subir archivo Excel de AGRUPADORES", type=["xlsx", "xls"])
 
     if personal_file and agrupadores_file:
         try:
@@ -66,9 +66,9 @@ def main():
 
             st.dataframe(personal_df)
             st.download_button(
-                label="Descargar Excel Agregadores",
+                label="Descargar Excel AGRUPADORES",
                 data=processed_data,
-                file_name=f"Agregadores_personal_{pd.Timestamp('now').strftime('%Y%m%d')}.xlsx",
+                file_name=f"Agrupadores_personal_{pd.Timestamp('now').strftime('%Y%m%d')}.xlsx",
                 mime="application/vnd.ms-excel"
             )
 
