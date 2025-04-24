@@ -25,9 +25,13 @@ st.markdown("""
 def main():
     st.title("Agrupadores Prevención 🪪")
 
+
+    col1, col2 = st.columns(2)
     # Subir archivos
-    personal_file = st.file_uploader("Subir archivo Excel de Personal", type=["xlsx", "xls"])
-    agrupadores_file = st.file_uploader("Subir archivo Excel de Agrupadores", type=["xlsx", "xls"])
+    with col1:
+        personal_file = st.file_uploader("Subir archivo Excel de Personal", type=["xlsx", "xls"])
+    with col2:
+        agrupadores_file = st.file_uploader("Subir archivo Excel de Agrupadores", type=["xlsx", "xls"])
 
     if personal_file and agrupadores_file:
         try:
