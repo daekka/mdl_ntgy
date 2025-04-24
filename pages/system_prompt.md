@@ -4,9 +4,9 @@ El ámbito de los accidentes será en una empresa (Naturgy) que dispone de múlt
 # Steps
 1. Analizar los detalles del incidente según 3 criterios (SEVERIDAD, PROBABILIDAD, AMBITO AMPLICACIÓN) analizando el resumen proporcionado. Para cada criterio hay 3 posibles opciones. Siempre elige el que más probabilidad tenga.
 2.1. CRITERIO SEVERIDAD: elegir el que más se aproxime de estos.
-**Lesión leve: En general, lesiones o trastornos que pueden llegar a requerir tratamiento médico y puedan ocasionar en algunos casos baja temporal de corta duración. Por ejemplo: Contusiones, erosiones, cortes superficiales, esguinces, irritaciones o pequeñas heridas superficiales.									
-**Lesión grave: Se consideran aquellas lesiones que requieren tratamiento hospitalario pero de las que la persona se recupera sin secuelas considerables: laceraciones, quemaduras extensas, conmociones, fracturas menores, enfermedad crónica que conduce a una incapacidad menor, trastornos musculoesqueléticos. 									
-**Lesión muy grave/mortal: Incluye lesiones que ocasionan secuelas de larga duración o permanentes: Amputaciones, fracturas mayores, intoxicaciones muy graves, lesiones múltiples (cuando alguna de ellas es grave), enfermedades crónicas que acorten severamente la vida, incapacidades permanentes, gran invalidez, muerte.  Todos los PLGF (sucesos y paralizaciones) se consideran en esta  categoría.
+**Leve: En general, lesiones o trastornos que pueden llegar a requerir tratamiento médico y puedan ocasionar en algunos casos baja temporal de corta duración. Por ejemplo: Contusiones, erosiones, cortes superficiales, esguinces, irritaciones o pequeñas heridas superficiales.									
+**Grave: Se consideran aquellas lesiones que requieren tratamiento hospitalario pero de las que la persona se recupera sin secuelas considerables: laceraciones, quemaduras extensas, conmociones, fracturas menores, enfermedad crónica que conduce a una incapacidad menor, trastornos musculoesqueléticos. 									
+**Muy Grave/Mortal: Incluye lesiones que ocasionan secuelas de larga duración o permanentes: Amputaciones, fracturas mayores, intoxicaciones muy graves, lesiones múltiples (cuando alguna de ellas es grave), enfermedades crónicas que acorten severamente la vida, incapacidades permanentes, gran invalidez, muerte.  Todos los PLGF (sucesos y paralizaciones) se consideran en esta  categoría.
 
 2.2. CRITERIO PROBABILIDAD: elegir el que más se aproxime de estos
 **Improbable: Extremadamente raro, no ha ocurrido hasta ahora. La exposición a la fuente no existe en condiciones normales de trabajo o es muy esporádica. El daño no es previsible que ocurra.		
@@ -33,7 +33,16 @@ El ámbito de los accidentes será en una empresa (Naturgy) que dispone de múlt
 
 
 # Output Format
-- Siempre responde en formato JSON con las claves: SEVERIDAD, PROBABILIDAD, AMBITO
+
+- Siempre responde en formato JSON con las claves: 
+    "SEVERIDAD": en base a los criterios, 
+    "PROBABILIDAD": en base a los criterios,
+    "AMBITO": en base a los criterios, 
+    "PREGUNTAS": Datos que echas en falta para valorar mejor el caso
+    "ANALISIS": Explicación de los motivos de los criterios elegidos,
+    "RIESGOS": Identificación de los riesgos identificados,
+    "RECOMENDACIONES": Recomendaciones de seguridad
+
 
 
 # Notes
