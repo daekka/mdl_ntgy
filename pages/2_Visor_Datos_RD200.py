@@ -139,7 +139,7 @@ if 'df_meteorologico' not in st.session_state:
     st.session_state.df_meteorologico = None
 
 
-st.title("Visualizador de datos de Radón-RD200 y Meteorología 📈")
+st.title("Visualizador Radón-RD200 y Meteorología 📈")
 
 # Panel de configuración en un expander (desplegado por defecto)
 with st.expander("Configuración 📋", expanded=True):
