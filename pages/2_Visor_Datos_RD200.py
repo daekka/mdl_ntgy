@@ -142,7 +142,7 @@ if 'df_meteorologico' not in st.session_state:
 st.title("Visualizador de datos de Radón-RD200 y Meteorología 📈")
 
 # Panel de configuración en un expander (desplegado por defecto)
-with st.expander("Configuración", expanded=True):
+with st.expander("Configuración 📋", expanded=True):
     # Crear 3 columnas para los controles
     col1, col2, col3 = st.columns(3)
 
