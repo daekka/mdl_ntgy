@@ -37,8 +37,8 @@ def cargar_datos_meteorologicos(archivo_json):
 
         # Convertir la columna 'Fecha' a datetime
         df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y %H:%M')
-        print("DataFrame meteorológico inicial:")
-        print(df.head())
+        #print("DataFrame meteorológico inicial:")
+        #print(df.head())
 
         # Obtener las variables únicas del DataFrame
         variables = df['Variable'].unique()
@@ -49,8 +49,8 @@ def cargar_datos_meteorologicos(archivo_json):
         # Usar todas las variables disponibles
         df_pivot = df_pivot[variables]
 
-        print("DataFrame meteorológico pivotado:")
-        print(df_pivot.head())
+        #print("DataFrame meteorológico pivotado:")
+        #print(df_pivot.head())
 
         return df_pivot
 
@@ -80,7 +80,7 @@ def obtener_datos_meteorologicos(df_meteorologico, timestamp):
         for columna in df_meteorologico.columns:
             resultado[columna] = float(closest_row[columna])
 
-        print(f"Datos meteorológicos para {timestamp}: {resultado}")  # Imprime el resultado
+        #print(f"Datos meteorológicos para {timestamp}: {resultado}")  # Imprime el resultado
         return resultado
 
     except Exception as e:
@@ -112,8 +112,8 @@ def cargar_y_procesar_datos(archivo, fecha_inicial, df_meteorologico):
 
         # Crear el DataFrame inicial con radón
         df = pd.DataFrame({'Radon (Bq/m3)': datos_radon}, index=timestamps)
-        print("DataFrame de radón inicial:")
-        print(df.head())
+        #print("DataFrame de radón inicial:")
+        #print(df.head())
 
         # Añadir datos meteorológicos reales
         # Iterar a través de las columnas del DataFrame meteorológico
@@ -121,8 +121,8 @@ def cargar_y_procesar_datos(archivo, fecha_inicial, df_meteorologico):
             # Crear una nueva columna en el DataFrame de radón con los datos meteorológicos
             df[columna] = [obtener_datos_meteorologicos(df_meteorologico, ts).get(columna) if obtener_datos_meteorologicos(df_meteorologico, ts) else None for ts in timestamps]
 
-        print("DataFrame de radón con datos meteorológicos:")
-        print(df.head())
+        #print("DataFrame de radón con datos meteorológicos:")
+        #print(df.head())
 
         df.index.name = 'Timestamp'  # Nombre del índice
         return df
