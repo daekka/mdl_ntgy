@@ -7,29 +7,45 @@ from openai import AzureOpenAI
 import httpx
 import json
 from openpyxl.styles import Alignment
+import ast
 
 
 # Cargar las instrucciones del sistema con codificación UTF-8 explícita
 with open("pages\system_prompt.md", "r", encoding="utf-8") as f:
     system_instructions = f.read()
 
-# Configura tu cliente de Azure OpenAI
-AZURE_CONFIG = {
-    "deployment_name": "gpt-4o",
-    "api_key": "cfe23f07a6f741ba85b1074adecc00b7",
-    "azure_endpoint": "https://aisa-lab-factoria.openai.azure.com/",
-    "api_version": "2025-01-01-preview"
-} 
 
-httpx_client = httpx.Client(http2=True, verify=False)
+def cargar_config_azure(archivo_config):
+    try:
+        contenido = archivo_config.read().decode('utf-8')
+        # Extraer el diccionario de configuración del contenido
+        config_str = contenido.strip()
+        if "AZURE_CONFIG" in config_str:
+            # Extraer solo el diccionario
+            config_dict_str = config_str.split('=', 1)[1].strip()
+            # Evaluar el string como diccionario de Python
+            config_dict = ast.literal_eval(config_dict_str)
+            return config_dict
+        else:
+            st.error("El archivo no contiene la variable AZURE_CONFIG.")
+            return None
+    except Exception as e:
+        st.error(f"Error al cargar la configuración: {str(e)}")
+        return None
 
-client = AzureOpenAI(
-    api_key=AZURE_CONFIG["api_key"],  
-    azure_endpoint=AZURE_CONFIG["azure_endpoint"],
-    api_version=AZURE_CONFIG["api_version"],
-    default_headers={"Content-Type": "application/json; charset=utf-8"},
-    http_client=httpx_client
-)
+# Función para inicializar el cliente OpenAI
+def inicializar_cliente_openai(config):
+    httpx_client = httpx.Client(http2=True, verify=False)
+    
+    client = AzureOpenAI(
+        api_key=config["api_key"],  
+        azure_endpoint=config["azure_endpoint"],
+        api_version=config["api_version"],
+        default_headers={"Content-Type": "application/json; charset=utf-8"},
+        http_client=httpx_client
+    )
+    return client
+
 # Define tu modelo Pydantic
 class puntuaciones(BaseModel):
     Severidad: str
@@ -56,10 +72,23 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
 
 
 st.title("Completar Excel con LLM")
-apikey = st.text_input("APIKEY", type ="password")
+
+# Reemplazar el campo de texto por un selector de archivo
+config_file = st.file_uploader("Sube tu archivo de configuración de Azure", type=["txt"])
+client = None
+
+if config_file is not None:
+    config = cargar_config_azure(config_file)
+    if config:
+        AZURE_CONFIG = config
+        st.success("Configuración cargada correctamente.")
+        client = inicializar_cliente_openai(AZURE_CONFIG)
+    else:
+        st.error("No se pudo cargar la configuración.")
+
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
-if uploaded_file is not None:
+if uploaded_file is not None and client is not None:
     in_memory_file = BytesIO(uploaded_file.read())
 
     # Cargar libro con openpyxl
@@ -201,3 +230,5 @@ if uploaded_file is not None:
                     )
         else:
             st.error("No se encontró una cabecera con los campos requeridos: 'Severidad', 'Probabilidad' e 'Ámbito'.")
+elif uploaded_file is not None and client is None:
+    st.warning("Por favor, carga primero la configuración de Azure para continuar.")
