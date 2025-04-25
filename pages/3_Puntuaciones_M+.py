@@ -31,7 +31,7 @@ def cargar_config_azure(archivo_config):
     try:
         contenido = archivo_config.read().decode('utf-8')
         config_dict = json.loads(contenido)
-        
+        st.write (config_dict)
         # Verificar claves necesarias
         claves_requeridas = {"deployment_name", "api_key", "azure_endpoint", "api_version"}
         if not claves_requeridas.issubset(config_dict):
