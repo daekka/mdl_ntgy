@@ -51,7 +51,7 @@ def cargar_config_azure(archivo_config):
 # Función para inicializar el cliente OpenAI
 def inicializar_cliente_openai(config):
     httpx_client = httpx.Client(http2=True, verify=False)
-    
+    st.write (config['api_key'])
     client = AzureOpenAI(
         api_key=config["api_key"],  
         azure_endpoint=config["azure_endpoint"],
