@@ -10,6 +10,19 @@ from openpyxl.styles import Alignment
 import ast
 
 
+# CSS personalizado para cambiar ancho del sidebar
+st.markdown("""
+    <style>
+        section[data-testid="stSidebar"] {
+            width: 275px !important;
+        }
+        section[data-testid="stSidebar"] > div:first-child {
+            width: 275px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # Se reemplaza la carga directa del archivo por un file uploader
 system_instructions = ""
 
@@ -237,11 +250,17 @@ if uploaded_file is not None and client is not None:
                                 if campo in df.columns and idx in df.index:
                                     valor = df.at[idx, campo]
                                     if valor is not None and not pd.isna(valor):
-                                        ws.cell(row=excel_row, column=col_index_map[campo] + 1).value = valor
-                                        # Configurar la celda para que muestre correctamente el texto con saltos de línea
-                                        cell = ws.cell(row=excel_row, column=col_index_map[campo] + 1)
+                                        # Si es un diccionario, convertirlo en un string con saltos de línea
+                                        if isinstance(valor, dict):
+                                            valor = '\n'.join([f"{k}: {v}" for k, v in valor.items()])
+                                        
+                                        # Asignar el valor a la celda
+                                        celda = ws.cell(row=excel_row, column=col_index_map[campo] + 1)
+                                        celda.value = valor
+
+                                        # Aplicar ajuste de texto si contiene saltos de línea
                                         if "\n" in str(valor):
-                                            cell.alignment = Alignment(wrapText=True)
+                                            celda.alignment = Alignment(wrapText=True)
 
                         # === Guardar el archivo con formato intacto ===
                         output = BytesIO()
