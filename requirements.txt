@@ -4,5 +4,5 @@ openpyxl
 xlsxwriter
 plotly
 openai
-httpx
+httpx[http2]
 
