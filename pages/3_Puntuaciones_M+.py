@@ -120,7 +120,8 @@ if config_file is not None:
     config = cargar_config_azure(config_file)
     if config:
         AZURE_CONFIG = config
-        #st.success("Configuración cargada correctamente.")
+        st.success("Configuración cargada correctamente.")
+        st.write(AZURE_CONFIG)
         client = inicializar_cliente_openai(AZURE_CONFIG)
     else:
         st.error("No se pudo cargar la configuración.")
