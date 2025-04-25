@@ -141,50 +141,54 @@ if 'hora_linea1' not in st.session_state:
     st.session_state.hora_linea1 = datetime.strptime('07:00', '%H:%M').time()
 if 'hora_linea2' not in st.session_state:
     st.session_state.hora_linea2 = datetime.strptime('17:00', '%H:%M').time()
+if 'incluir_fines_semana' not in st.session_state:
+    st.session_state.incluir_fines_semana = False
 
 
 st.title("Visualizador Radón-RD200 y Meteorología 📈")
 
-# Panel de configuración en un expander (desplegado por defecto)
-with st.expander("Configuración 📋", expanded=True):
-    # Crear 3 columnas para los controles
-    col1, col2, col3 = st.columns(3)
+# Panel de configuración en un expander cuando no hay datos cargados
+if st.session_state.df_radon is None:
+    with st.expander("Configuración 📋", expanded=True):
+        # Crear 3 columnas para los controles
+        col1, col2, col3 = st.columns(3)
 
-    with col1:
-        archivo_cargado = st.file_uploader("Cargar archivo de datos de radón", type=["txt"])
-        
-    with col2:
-        fecha_inicial = st.date_input("Fecha inicial", datetime(2025, 4, 21).date())
-        if 'hora_inicial' not in st.session_state:
-            st.session_state.hora_inicial = datetime.now().time().replace(hour=10, minute=15, second=0, microsecond=0)
-        hora_inicial = st.time_input("Hora inicial", st.session_state.hora_inicial)
-        st.session_state.hora_inicial = hora_inicial
-        
-    with col3:
-        st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Meteogalicia", icon="🌎")
-        # Widget para cargar el archivo JSON meteorológico
-        archivo_meteorologico = st.file_uploader("Cargar archivo JSON meteorológico", type=["json"])
-        
-        if archivo_meteorologico is not None:
-            st.session_state.df_meteorologico = cargar_datos_meteorologicos(archivo_meteorologico)
-            if st.session_state.df_meteorologico is not None:
-                st.success("Archivo meteorológico cargado correctamente!")
+        with col1:
+            archivo_cargado = st.file_uploader("Cargar archivo de datos de radón", type=["txt"])
+            
+        with col2:
+            fecha_inicial = st.date_input("Fecha inicial", datetime(2025, 4, 21).date())
+            if 'hora_inicial' not in st.session_state:
+                st.session_state.hora_inicial = datetime.now().time().replace(hour=10, minute=15, second=0, microsecond=0)
+            hora_inicial = st.time_input("Hora inicial", st.session_state.hora_inicial)
+            st.session_state.hora_inicial = hora_inicial
+            
+        with col3:
+            st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Meteogalicia", icon="🌎")
+            # Widget para cargar el archivo JSON meteorológico
+            archivo_meteorologico = st.file_uploader("Cargar archivo JSON meteorológico", type=["json"])
+            
+            if archivo_meteorologico is not None:
+                st.session_state.df_meteorologico = cargar_datos_meteorologicos(archivo_meteorologico)
+                if st.session_state.df_meteorologico is not None:
+                    st.success("Archivo meteorológico cargado correctamente!")
 
-    # Botón centrado
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
-    with col_btn2:
-        if st.button("Cargar y Mostrar Datos", use_container_width=True):
-            if archivo_cargado is None:
-                st.error("Por favor, carga un archivo de datos de radón.")
-            elif st.session_state.df_meteorologico is None:
-                st.error("Por favor, carga un archivo de datos meteorológicos (JSON).")
-            else:
-                fecha_hora_inicial = datetime.combine(fecha_inicial, hora_inicial)
-                df_radon = cargar_y_procesar_datos(archivo_cargado, fecha_hora_inicial, st.session_state.df_meteorologico)
+        # Botón centrado
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+        with col_btn2:
+            if st.button("Cargar y Mostrar Datos", use_container_width=True):
+                if archivo_cargado is None:
+                    st.error("Por favor, carga un archivo de datos de radón.")
+                elif st.session_state.df_meteorologico is None:
+                    st.error("Por favor, carga un archivo de datos meteorológicos (JSON).")
+                else:
+                    fecha_hora_inicial = datetime.combine(fecha_inicial, hora_inicial)
+                    df_radon = cargar_y_procesar_datos(archivo_cargado, fecha_hora_inicial, st.session_state.df_meteorologico)
 
-                if df_radon is not None:
-                    st.session_state.df_radon = df_radon
-                    st.success("Datos cargados y procesados correctamente!")
+                    if df_radon is not None:
+                        st.session_state.df_radon = df_radon
+                        st.success("Datos cargados y procesados correctamente!")
+                        st.rerun()  # Recargar la página para mostrar las pestañas
 
 # Separador visual
 st.markdown("---")
@@ -192,16 +196,67 @@ st.markdown("---")
 # Main area
 if st.session_state.df_radon is not None:
     # Crear pestañas para diferentes visualizaciones
-    tab1, tab2, tab3, tab4 = st.tabs(["Datos", "Gráfica", "Estadísticas", "Correlaciones"])
+    tab0, tab1, tab2, tab3, tab4 = st.tabs(["Configuración", "Datos", "Gráfica", "Estadísticas", "Correlaciones"])
+
+    with tab0:
+        st.subheader("Carga de datos")
+        
+        # Crear 3 columnas para los controles
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            nuevo_archivo = st.file_uploader("Cargar archivo de datos de radón", type=["txt"], key="nuevo_radon")
+            
+        with col2:
+            nueva_fecha = st.date_input("Fecha inicial", datetime(2025, 4, 21).date(), key="nueva_fecha")
+            nueva_hora = st.time_input("Hora inicial", st.session_state.hora_inicial, key="nueva_hora")
+            
+        with col3:
+            st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Meteogalicia", icon="🌎")
+            # Widget para cargar el archivo JSON meteorológico
+            nuevo_archivo_meteo = st.file_uploader("Cargar archivo JSON meteorológico", type=["json"], key="nuevo_meteo")
+
+        # Botón centrado
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+        with col_btn2:
+            if st.button("Actualizar datos", use_container_width=True, key="actualizar_btn"):
+                if nuevo_archivo is None:
+                    st.error("Por favor, carga un archivo de datos de radón.")
+                elif nuevo_archivo_meteo is None:
+                    st.error("Por favor, carga un archivo de datos meteorológicos (JSON).")
+                else:
+                    # Procesar archivos meteorológicos
+                    df_meteo_nuevo = cargar_datos_meteorologicos(nuevo_archivo_meteo)
+                    if df_meteo_nuevo is not None:
+                        st.session_state.df_meteorologico = df_meteo_nuevo
+                        
+                        # Procesar archivo de radón
+                        fecha_hora_inicial = datetime.combine(nueva_fecha, nueva_hora)
+                        df_radon_nuevo = cargar_y_procesar_datos(nuevo_archivo, fecha_hora_inicial, st.session_state.df_meteorologico)
+                        
+                        if df_radon_nuevo is not None:
+                            st.session_state.df_radon = df_radon_nuevo
+                            st.success("Datos actualizados correctamente!")
 
     with tab1:
         st.dataframe(st.session_state.df_radon)
+        
+        # Botón de descarga CSV
+        csv = st.session_state.df_radon.to_csv().encode('utf-8')
+        st.download_button(
+            label="Descargar datos como CSV",
+            data=csv,
+            file_name='datos_radon.csv',
+            mime='text/csv',
+            key="descarga_datos_tab1"
+        )
 
     with tab2:
         st.subheader("Visualización de datos")
 
         # Variables disponibles son todas las columnas del DataFrame de radón
         variables_disponibles = list(st.session_state.df_radon.columns)
+        
         with st.expander("Configuración de áreas sombreadas diarias", expanded=False):
             # Crear una fila para los controles de las áreas sombreadas
             st.subheader("Configuración de áreas sombreadas diarias")
@@ -211,12 +266,15 @@ if st.session_state.df_radon is not None:
                 hora_linea1 = st.time_input("Hora de inicio", st.session_state.hora_linea1)
                 st.session_state.hora_linea1 = hora_linea1
                 color_linea1 = st.color_picker("Color del área sombreada", "#808080")
+                # Opción para incluir o excluir fines de semana
+                incluir_fines_semana = st.checkbox("Incluir sábados y domingos", value=st.session_state.incluir_fines_semana)
+                st.session_state.incluir_fines_semana = incluir_fines_semana
             
             with col_linea2:
                 hora_linea2 = st.time_input("Hora de fin", st.session_state.hora_linea2)
                 st.session_state.hora_linea2 = hora_linea2
                 opacity = st.slider("Opacidad", 0.0, 1.0, 0.2, 0.05)
-
+        
         # Crear gráfica con Plotly para todas las variables
         fig = go.Figure()
 
@@ -317,6 +375,13 @@ if st.session_state.df_radon is not None:
                 dia_actual = dias[i].date()
                 dia_siguiente = dias[i+1].date()
                 
+                # Verificar si es fin de semana (5=sábado, 6=domingo)
+                es_fin_semana = dia_actual.weekday() >= 5
+                
+                # Si es fin de semana y no se incluyen fines de semana, saltamos este día
+                if es_fin_semana and not st.session_state.incluir_fines_semana:
+                    continue
+                
                 # Crear timestamps para las horas en el día actual
                 inicio = datetime.combine(dia_actual, st.session_state.hora_linea1)
                 fin = datetime.combine(dia_actual, st.session_state.hora_linea2)
@@ -359,15 +424,6 @@ if st.session_state.df_radon is not None:
 
         # Mostrar gráfica
         st.plotly_chart(fig, use_container_width=True)
-
-        # Botón de descarga CSV
-        csv = st.session_state.df_radon.to_csv().encode('utf-8')
-        st.download_button(
-            label="Descargar datos como CSV",
-            data=csv,
-            file_name='datos_radon.csv',
-            mime='text/csv',
-        )
 
     with tab3:
         st.subheader("Estadísticas")
@@ -555,15 +611,6 @@ if st.session_state.df_radon is not None:
                 )
                 
                 st.plotly_chart(fig_hist, use_container_width=True)
-        
-        # Botón de descarga CSV con datos filtrados
-        csv_filtrado = df_filtrado.to_csv().encode('utf-8')
-        st.download_button(
-            label="Descargar datos filtrados como CSV",
-            data=csv_filtrado,
-            file_name='datos_radon_filtrados.csv',
-            mime='text/csv',
-        )
 
     with tab4:
         st.subheader("Mapa de Correlaciones")
