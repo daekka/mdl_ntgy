@@ -150,9 +150,9 @@ with st.expander("Configuración 📋", expanded=True):
         archivo_cargado = st.file_uploader("Cargar archivo de datos de radón", type=["txt"])
         
     with col2:
-        fecha_inicial = st.date_input("Fecha inicial", datetime.today().date())
+        fecha_inicial = st.date_input("Fecha inicial", datetime(2025, 4, 21).date())
         if 'hora_inicial' not in st.session_state:
-            st.session_state.hora_inicial = datetime.now().time()
+            st.session_state.hora_inicial = datetime.now().time().replace(hour=10, minute=15, second=0, microsecond=0)
         hora_inicial = st.time_input("Hora inicial", st.session_state.hora_inicial)
         st.session_state.hora_inicial = hora_inicial
         
