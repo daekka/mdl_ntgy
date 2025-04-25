@@ -202,20 +202,20 @@ if st.session_state.df_radon is not None:
 
         # Variables disponibles son todas las columnas del DataFrame de radón
         variables_disponibles = list(st.session_state.df_radon.columns)
-        with st.expander("Configuración de líneas verticales diarias", expanded=False):
-            # Crear una fila para los controles de las líneas verticales
-            st.subheader("Configuración de líneas verticales diarias")
+        with st.expander("Configuración de áreas sombreadas diarias", expanded=False):
+            # Crear una fila para los controles de las áreas sombreadas
+            st.subheader("Configuración de áreas sombreadas diarias")
             col_linea1, col_linea2 = st.columns(2)
             
             with col_linea1:
-                hora_linea1 = st.time_input("Primera línea vertical (hora)", st.session_state.hora_linea1)
+                hora_linea1 = st.time_input("Hora de inicio", st.session_state.hora_linea1)
                 st.session_state.hora_linea1 = hora_linea1
-                color_linea1 = st.color_picker("Color primera línea", "#0000FF")
+                color_linea1 = st.color_picker("Color del área sombreada", "#808080")
             
             with col_linea2:
-                hora_linea2 = st.time_input("Segunda línea vertical (hora)", st.session_state.hora_linea2)
+                hora_linea2 = st.time_input("Hora de fin", st.session_state.hora_linea2)
                 st.session_state.hora_linea2 = hora_linea2
-                color_linea2 = st.color_picker("Color segunda línea", "#00FF00")
+                opacity = st.slider("Opacidad", 0.0, 1.0, 0.2, 0.05)
 
         # Crear gráfica con Plotly para todas las variables
         fig = go.Figure()
@@ -310,52 +310,36 @@ if st.session_state.df_radon is not None:
             horas_linea2_filtradas = [hora for hora in horas_linea2 if 
                                      st.session_state.df_radon.index[0] <= hora <= st.session_state.df_radon.index[-1]]
             
-            # Añadir líneas verticales para cada día en la primera hora seleccionada
-            for hora in horas_linea1_filtradas:
-                fig.add_shape(
-                    type="line",
-                    x0=hora,
-                    y0=0,
-                    x1=hora,
-                    y1=1,
-                    yref="paper",
-                    line=dict(color=color_linea1, width=1, dash="dot")
-                )
-                # Añadir etiqueta solo para algunas líneas (para evitar sobrecarga)
-                if horas_linea1_filtradas.index(hora) % 2 == 0:  # Mostrar etiqueta en días alternos
-                    fig.add_annotation(
-                        x=hora,
-                        y=1,
+            # Añadir áreas sombreadas entre las horas seleccionadas para cada día
+            # Asumiendo que hora_linea1 es anterior a hora_linea2 en el mismo día
+            for i in range(len(dias) - 1):
+                # Obtener el día actual y el siguiente
+                dia_actual = dias[i].date()
+                dia_siguiente = dias[i+1].date()
+                
+                # Crear timestamps para las horas en el día actual
+                inicio = datetime.combine(dia_actual, st.session_state.hora_linea1)
+                fin = datetime.combine(dia_actual, st.session_state.hora_linea2)
+                
+                # Si hora_linea1 es después de hora_linea2, ajustamos para sombrear desde hora_linea1 hasta hora_linea2 del día siguiente
+                if st.session_state.hora_linea1 > st.session_state.hora_linea2:
+                    fin = datetime.combine(dia_siguiente, st.session_state.hora_linea2)
+                
+                # Verificar si el rango está dentro de los datos
+                if (inicio >= st.session_state.df_radon.index[0] and 
+                    fin <= st.session_state.df_radon.index[-1]):
+                    # Añadir área sombreada
+                    fig.add_shape(
+                        type="rect",
+                        x0=inicio,
+                        y0=0,
+                        x1=fin,
+                        y1=1,
                         yref="paper",
-                        text=f"{st.session_state.hora_linea1.strftime('%H:%M')}",
-                        showarrow=False,
-                        textangle=-90,
-                        yshift=10,
-                        font=dict(size=10, color=color_linea1)
-                    )
-            
-            # Añadir líneas verticales para cada día en la segunda hora seleccionada
-            for hora in horas_linea2_filtradas:
-                fig.add_shape(
-                    type="line",
-                    x0=hora,
-                    y0=0,
-                    x1=hora,
-                    y1=1,
-                    yref="paper",
-                    line=dict(color=color_linea2, width=1, dash="dot")
-                )
-                # Añadir etiqueta solo para algunas líneas (para evitar sobrecarga)
-                if horas_linea2_filtradas.index(hora) % 2 == 0:  # Mostrar etiqueta en días alternos
-                    fig.add_annotation(
-                        x=hora,
-                        y=1,
-                        yref="paper",
-                        text=f"{st.session_state.hora_linea2.strftime('%H:%M')}",
-                        showarrow=False,
-                        textangle=-90,
-                        yshift=10,
-                        font=dict(size=10, color=color_linea2)
+                        fillcolor=color_linea1,
+                        opacity=opacity,
+                        layer="below",
+                        line_width=0,
                     )
 
         # Mejorar diseño
