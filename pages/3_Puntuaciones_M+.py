@@ -83,9 +83,14 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
     #st.write(event)
     return(event)
 
+st.set_page_config(
+    page_title="M+ LLM",
+    page_icon="🗯️",
+    layout="wide",
+)
 
 
-st.title("Completar M+ con LLM")
+st.title("Completar M+ con LLM🗯️")
 
 # Crear tres columnas para los file uploaders
 col1, col2, col3 = st.columns(3)
