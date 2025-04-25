@@ -374,13 +374,196 @@ if st.session_state.df_radon is not None:
 
         # Variables disponibles para estadísticas
         variables_disponibles = list(st.session_state.df_radon.columns)
-        col_stats = st.columns(len(variables_disponibles) if variables_disponibles else 1)
-
-        for i, variable in enumerate(variables_disponibles):
-            with col_stats[i]:
-                st.metric(f"{variable}", f"Promedio: {st.session_state.df_radon[variable].mean():.2f}")
-                st.metric("", f"Máximo: {st.session_state.df_radon[variable].max():.2f}")
-                st.metric("", f"Mínimo: {st.session_state.df_radon[variable].min():.2f}")
+        
+        # Añadir selector para filtrar por rango de tiempo
+        st.write("Selecciona un rango de tiempo para filtrar los datos:")
+        tiempo_min = st.session_state.df_radon.index.min().to_pydatetime()
+        tiempo_max = st.session_state.df_radon.index.max().to_pydatetime()
+        col_fecha1, col_fecha2 = st.columns(2)
+        with col_fecha1:
+            fecha_inicio = st.date_input("Fecha inicio", tiempo_min.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date())
+            hora_inicio = st.time_input("Hora inicio", tiempo_min.time())
+        with col_fecha2:
+            fecha_fin = st.date_input("Fecha fin", tiempo_max.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date())
+            hora_fin = st.time_input("Hora fin", tiempo_max.time())
+        
+        # Crear timestamp combinando fecha y hora
+        timestamp_inicio = datetime.combine(fecha_inicio, hora_inicio)
+        timestamp_fin = datetime.combine(fecha_fin, hora_fin)
+        
+        # Filtrar DataFrame por el rango de tiempo seleccionado
+        df_filtrado = st.session_state.df_radon.loc[timestamp_inicio:timestamp_fin]
+        
+        # Dividir en dos columnas para la visualización
+        col_izq, col_der = st.columns([3, 2])
+        
+        # Panel de métricas básicas
+        with col_der:
+            st.write("#### Métricas básicas")
+            for i, variable in enumerate(variables_disponibles):
+                # Diseño mejorado para las métricas
+                with st.container(border=True):
+                    st.markdown(f"**{variable}**")
+                    
+                    media = df_filtrado[variable].mean()
+                    maximo = df_filtrado[variable].max()
+                    minimo = df_filtrado[variable].min()
+                    std = df_filtrado[variable].std()
+                    
+                    # Mejorar presentación de estadísticas con iconos
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.metric("Media", f"{media:.2f}")
+                        st.metric("Desv. Est.", f"{std:.2f}")
+                    with c2:
+                        st.metric("Máximo", f"{maximo:.2f}")
+                        st.metric("Mínimo", f"{minimo:.2f}")
+        
+        # Contenedor izquierdo para gráficos
+        with col_izq:
+            # Pestañas para diferentes tipos de gráficos
+            tab_bar, tab_box, tab_hist = st.tabs(["Barras", "Boxplot", "Histograma"])
+            
+            # Crear un gráfico de barras para comparar medias, máximos y mínimos
+            with tab_bar:
+                st.write("#### Comparativa de variables")
+                
+                # Selector de variables (multiselección)
+                vars_seleccionadas_bar = st.multiselect(
+                    "Selecciona variables para comparar",
+                    variables_disponibles,
+                    default=variables_disponibles[:min(3, len(variables_disponibles))]  # Selección por defecto: primeras 3 variables o menos
+                )
+                
+                if vars_seleccionadas_bar:
+                    # Preparar datos para el gráfico de barras
+                    stats_data = {
+                        'Variable': [],
+                        'Valor': [],
+                        'Estadística': []
+                    }
+                    
+                    for var in vars_seleccionadas_bar:
+                        stats_data['Variable'].extend([var, var, var])
+                        stats_data['Valor'].extend([
+                            df_filtrado[var].mean(),
+                            df_filtrado[var].max(),
+                            df_filtrado[var].min()
+                        ])
+                        stats_data['Estadística'].extend(['Media', 'Máximo', 'Mínimo'])
+                    
+                    df_stats = pd.DataFrame(stats_data)
+                    
+                    # Crear gráfico de barras agrupadas
+                    fig_bar = px.bar(
+                        df_stats, 
+                        x='Variable', 
+                        y='Valor', 
+                        color='Estadística',
+                        barmode='group',
+                        title='Comparativa estadística por variable',
+                        labels={'Valor': 'Valor', 'Variable': 'Variable'},
+                        color_discrete_sequence=px.colors.qualitative.G10
+                    )
+                    
+                    # Mejorar diseño
+                    fig_bar.update_layout(
+                        legend_title="Estadística",
+                        xaxis_title="",
+                        height=400,
+                    )
+                    
+                    st.plotly_chart(fig_bar, use_container_width=True)
+                else:
+                    st.info("Selecciona al menos una variable para visualizar")
+            
+            # Visualización con boxplots
+            with tab_box:
+                st.write("#### Distribución de valores (Boxplot)")
+                
+                # Selector de variables (multiselección)
+                vars_seleccionadas_box = st.multiselect(
+                    "Selecciona variables para el boxplot",
+                    variables_disponibles,
+                    default=variables_disponibles[:min(3, len(variables_disponibles))]  # Selección por defecto: primeras 3 variables o menos
+                )
+                
+                if vars_seleccionadas_box:
+                    # Crear un DataFrame en formato largo para visualización
+                    df_long = pd.melt(
+                        df_filtrado.reset_index(), 
+                        id_vars=['Timestamp'],
+                        value_vars=vars_seleccionadas_box,
+                        var_name='Variable', 
+                        value_name='Valor'
+                    )
+                    
+                    # Crear el boxplot
+                    fig_box = px.box(
+                        df_long, 
+                        x='Variable', 
+                        y='Valor', 
+                        color='Variable',
+                        title='Distribución de valores por variable',
+                        labels={'Valor': 'Valor'},
+                        color_discrete_sequence=px.colors.qualitative.Plotly
+                    )
+                    
+                    # Mejorar diseño
+                    fig_box.update_layout(
+                        showlegend=False,
+                        xaxis_title="",
+                        height=400,
+                    )
+                    
+                    st.plotly_chart(fig_box, use_container_width=True)
+                else:
+                    st.info("Selecciona al menos una variable para visualizar")
+            
+            # Histogramas
+            with tab_hist:
+                st.write("#### Distribución de frecuencia (Histograma)")
+                
+                # Selector de variable
+                var_seleccionada = st.selectbox("Selecciona una variable", variables_disponibles)
+                num_bins = st.slider("Número de intervalos", min_value=5, max_value=50, value=20)
+                
+                # Crear histograma
+                fig_hist = px.histogram(
+                    df_filtrado, 
+                    x=var_seleccionada,
+                    nbins=num_bins,
+                    title=f'Histograma de {var_seleccionada}',
+                    labels={var_seleccionada: 'Valor'},
+                    color_discrete_sequence=['#636EFA']
+                )
+                
+                # Añadir línea vertical con la media
+                fig_hist.add_vline(
+                    x=df_filtrado[var_seleccionada].mean(), 
+                    line_dash="dash", 
+                    line_color="red",
+                    annotation_text="Media",
+                    annotation_position="top right"
+                )
+                
+                # Mejorar diseño
+                fig_hist.update_layout(
+                    xaxis_title="Valor",
+                    yaxis_title="Frecuencia",
+                    height=400,
+                )
+                
+                st.plotly_chart(fig_hist, use_container_width=True)
+        
+        # Botón de descarga CSV con datos filtrados
+        csv_filtrado = df_filtrado.to_csv().encode('utf-8')
+        st.download_button(
+            label="Descargar datos filtrados como CSV",
+            data=csv_filtrado,
+            file_name='datos_radon_filtrados.csv',
+            mime='text/csv',
+        )
 
     with tab4:
         st.subheader("Mapa de Correlaciones")
