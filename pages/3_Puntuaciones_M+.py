@@ -91,32 +91,32 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
 
 
 st.title("Completar M+ con LLM🗯️")
+with st.expander("Configuración 📋", expanded=True):
+    # Crear tres columnas para los file uploaders
+    col1, col2, col3 = st.columns(3)
 
-# Crear tres columnas para los file uploaders
-col1, col2, col3 = st.columns(3)
+    # Columna 1: Configuración de Azure
+    with col1:
+        st.subheader("Configuración AZURE")
+        config_file = st.file_uploader("Sube tu archivo de configuración de Azure", type=["txt"])
+        
+    # Columna 2: Prompt del sistema
+    with col2:
+        st.subheader("Prompt")
+        prompt_file = st.file_uploader("Sube tu archivo con el prompt del sistema", type=["txt", "md"])
 
-# Columna 1: Configuración de Azure
-with col1:
-    st.subheader("Configuración AZURE")
-    config_file = st.file_uploader("Sube tu archivo de configuración de Azure", type=["txt"])
-    
-# Columna 2: Prompt del sistema
-with col2:
-    st.subheader("Prompt")
-    prompt_file = st.file_uploader("Sube tu archivo con el prompt del sistema", type=["txt", "md"])
+    # Columna 3: Archivo Excel
+    with col3:
+        st.subheader("Excel Puntuaciones")
+        uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
-# Columna 3: Archivo Excel
-with col3:
-    st.subheader("Excel Puntuaciones")
-    uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
-
-# Cargar el prompt del sistema desde el archivo subido
-if prompt_file is not None:
-    try:
-        system_instructions = prompt_file.read().decode('utf-8')
-        #st.success("Prompt del sistema cargado correctamente.")
-    except Exception as e:
-        st.error(f"Error al cargar el prompt del sistema: {str(e)}")
+    # Cargar el prompt del sistema desde el archivo subido
+    if prompt_file is not None:
+        try:
+            system_instructions = prompt_file.read().decode('utf-8')
+            #st.success("Prompt del sistema cargado correctamente.")
+        except Exception as e:
+            st.error(f"Error al cargar el prompt del sistema: {str(e)}")
 
 client = None
 
