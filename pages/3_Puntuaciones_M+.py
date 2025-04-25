@@ -31,7 +31,7 @@ def cargar_config_azure(archivo_config):
     try:
         contenido = archivo_config.read().decode('utf-8')
         config_dict = json.loads(contenido)
-        st.write (config_dict)
+        
         # Verificar claves necesarias
         claves_requeridas = {"deployment_name", "api_key", "azure_endpoint", "api_version"}
         if not claves_requeridas.issubset(config_dict):
@@ -120,7 +120,6 @@ if config_file is not None:
     if config:
         AZURE_CONFIG = config
         st.success("Configuración cargada correctamente.")
-        st.write(AZURE_CONFIG)
         client = inicializar_cliente_openai(AZURE_CONFIG)
     else:
         st.error("No se pudo cargar la configuración.")
