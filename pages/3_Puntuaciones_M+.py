@@ -124,7 +124,7 @@ if config_file is not None:
     config = cargar_config_azure(config_file)
     if config:
         AZURE_CONFIG = config
-        st.success("Configuración cargada correctamente.")
+        #st.success("Configuración cargada correctamente.")
         client = inicializar_cliente_openai(AZURE_CONFIG)
     else:
         st.error("No se pudo cargar la configuración.")
@@ -140,7 +140,7 @@ if uploaded_file is not None and client is not None:
         # Cargar libro con openpyxl
         wb = load_workbook(filename=in_memory_file)
         hojas = wb.sheetnames
-        hoja_seleccionada = st.selectbox("Selecciona una hoja", hojas)
+        hoja_seleccionada = st.selectbox("Selecciona la hoja a tratar", hojas)
 
         if hoja_seleccionada:
             ws = wb[hoja_seleccionada]
