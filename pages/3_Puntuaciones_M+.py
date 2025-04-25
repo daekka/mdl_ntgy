@@ -91,7 +91,7 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
 
 
 st.title("Completar M+ con LLM🗯️")
-with st.expander("Configuración 📋", expanded=not (config_file and prompt_file and uploaded_file)):
+with st.expander("Configuración 📋", expanded=True):
     # Crear tres columnas para los file uploaders
     col1, col2, col3 = st.columns(3)
 
