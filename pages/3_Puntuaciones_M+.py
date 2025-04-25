@@ -137,6 +137,9 @@ if uploaded_file is not None and client is not None:
         in_memory_file = BytesIO(uploaded_file.read())
         
         st.divider()
+        with st.expander("System Prompt 📋", expanded=False):
+            st.markdown(system_instructions)
+        st.divider()
         # Cargar libro con openpyxl
         wb = load_workbook(filename=in_memory_file)
         hojas = wb.sheetnames
