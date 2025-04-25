@@ -192,7 +192,7 @@ st.markdown("---")
 # Main area
 if st.session_state.df_radon is not None:
     # Crear pestañas para diferentes visualizaciones
-    tab1, tab2, tab3 = st.tabs(["Datos", "Gráfica", "Correlaciones"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Datos", "Gráfica", "Estadísticas", "Correlaciones"])
 
     with tab1:
         st.dataframe(st.session_state.df_radon)
@@ -360,17 +360,6 @@ if st.session_state.df_radon is not None:
         # Mostrar gráfica
         st.plotly_chart(fig, use_container_width=True)
 
-        # Información estadística básica
-        st.subheader("Estadísticas")
-
-        col_stats = st.columns(len(variables_disponibles) if variables_disponibles else 1)
-
-        for i, variable in enumerate(variables_disponibles):
-            with col_stats[i]:
-                st.metric(f"{variable}", f"Promedio: {st.session_state.df_radon[variable].mean():.2f}")
-                st.metric("", f"Máximo: {st.session_state.df_radon[variable].max():.2f}")
-                st.metric("", f"Mínimo: {st.session_state.df_radon[variable].min():.2f}")
-
         # Botón de descarga CSV
         csv = st.session_state.df_radon.to_csv().encode('utf-8')
         st.download_button(
@@ -381,6 +370,19 @@ if st.session_state.df_radon is not None:
         )
 
     with tab3:
+        st.subheader("Estadísticas")
+
+        # Variables disponibles para estadísticas
+        variables_disponibles = list(st.session_state.df_radon.columns)
+        col_stats = st.columns(len(variables_disponibles) if variables_disponibles else 1)
+
+        for i, variable in enumerate(variables_disponibles):
+            with col_stats[i]:
+                st.metric(f"{variable}", f"Promedio: {st.session_state.df_radon[variable].mean():.2f}")
+                st.metric("", f"Máximo: {st.session_state.df_radon[variable].max():.2f}")
+                st.metric("", f"Mínimo: {st.session_state.df_radon[variable].min():.2f}")
+
+    with tab4:
         st.subheader("Mapa de Correlaciones")
         
         # Calcular la matriz de correlación
