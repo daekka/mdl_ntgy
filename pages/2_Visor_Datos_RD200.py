@@ -138,7 +138,7 @@ if 'df_radon' not in st.session_state:
 if 'df_meteorologico' not in st.session_state:
     st.session_state.df_meteorologico = None
 if 'hora_inicial' not in st.session_state:
-    st.session_state.hora_inicial = datetime.strptime('00:00', '%H:%M').time()
+    st.session_state.hora_inicial = datetime.strptime('10:15', '%H:%M').time()
 if 'hora_linea1' not in st.session_state:
     st.session_state.hora_linea1 = datetime.strptime('07:00', '%H:%M').time()
 if 'hora_linea2' not in st.session_state:
@@ -193,7 +193,7 @@ with tab0:
                     
                     if df_radon_nuevo is not None:
                         st.session_state.df_radon = df_radon_nuevo
-                        st.success("Datos actualizados correctamente!")
+                        st.success("Datos cargados correctamente!")
 
 with tab1:
     # Añadir información de resumen sobre los datos
