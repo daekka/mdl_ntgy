@@ -30,20 +30,23 @@ system_instructions = ""
 def cargar_config_azure(archivo_config):
     try:
         contenido = archivo_config.read().decode('utf-8')
-        # Extraer el diccionario de configuración del contenido
-        config_str = contenido.strip()
-        if "AZURE_CONFIG" in config_str:
-            # Extraer solo el diccionario
-            config_dict_str = config_str.split('=', 1)[1].strip()
-            # Evaluar el string como diccionario de Python
-            config_dict = ast.literal_eval(config_dict_str)
-            return config_dict
-        else:
-            st.error("El archivo no contiene la variable AZURE_CONFIG.")
+        config_dict = json.loads(contenido)
+        
+        # Verificar claves necesarias
+        claves_requeridas = {"deployment_name", "api_key", "azure_endpoint", "api_version"}
+        if not claves_requeridas.issubset(config_dict):
+            st.error("Faltan una o más claves requeridas en la configuración.")
             return None
+
+        return config_dict
+
+    except json.JSONDecodeError:
+        st.error("El archivo no tiene un formato JSON válido.")
+        return None
     except Exception as e:
         st.error(f"Error al cargar la configuración: {str(e)}")
         return None
+
 
 # Función para inicializar el cliente OpenAI
 def inicializar_cliente_openai(config):
