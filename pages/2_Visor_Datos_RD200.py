@@ -239,6 +239,32 @@ if st.session_state.df_radon is not None:
                             st.success("Datos actualizados correctamente!")
 
     with tab1:
+        # Añadir información de resumen sobre los datos
+        with st.container(border=True):
+            # Calcular métricas importantes
+            num_registros = len(st.session_state.df_radon)
+            fecha_hora_inicial = st.session_state.df_radon.index.min().strftime("%d/%m/%Y %H:%M")
+            fecha_hora_final = st.session_state.df_radon.index.max().strftime("%d/%m/%Y %H:%M")
+            
+            # Calcular el período de muestreo en horas
+            if num_registros > 1:
+                primer_timestamp = st.session_state.df_radon.index[0]
+                segundo_timestamp = st.session_state.df_radon.index[1]
+                periodo_muestreo = (segundo_timestamp - primer_timestamp).total_seconds() / 3600
+                periodo_muestreo_str = f"{periodo_muestreo:.1f} horas"
+            else:
+                periodo_muestreo_str = "N/A"
+            
+            # Crear columnas para mostrar la información
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Número de registros", f"{num_registros}")
+                st.metric("Período de muestreo", periodo_muestreo_str)
+            with col2:
+                st.metric("Fecha y hora inicial", fecha_hora_inicial)
+                st.metric("Fecha y hora final", fecha_hora_final)
+            
+        # Mostrar el dataframe
         st.dataframe(st.session_state.df_radon)
         
         # Botón de descarga CSV
