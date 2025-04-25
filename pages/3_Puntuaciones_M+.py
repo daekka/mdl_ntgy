@@ -248,12 +248,16 @@ if uploaded_file is not None and client is not None:
                                     with st.expander("Conclusiones LLM 📝", expanded=False):
                                         col1, col2, col3, col4 = st.columns(4)
                                         with col1:
-                                            st.write(completado["PREGUNTAS"])
-                                        with col2:
+                                            st.subheader("Análisis", divider=True)
                                             st.write(completado["ANALISIS"])
+                                        with col2:
+                                            st.subheader("Preguntas", divider=True)
+                                            st.write(completado["PREGUNTAS"])
                                         with col3:
+                                            st.subheader("Riesgos", divider=True)
                                             st.write(completado["RIESGOS"])
                                         with col4:
+                                            st.subheader("Recomendaciones", divider=True)
                                             st.write(completado["RECOMENDACIONES"]) 
 
                                 else:
