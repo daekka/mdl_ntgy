@@ -188,7 +188,7 @@ st.markdown("---")
 # Main area
 if st.session_state.df_radon is not None:
     # Crear pestañas para diferentes visualizaciones
-    tab1, tab2 = st.tabs(["Datos", "Gráfica"])
+    tab1, tab2, tab3 = st.tabs(["Datos", "Gráfica", "Correlaciones"])
 
     with tab1:
         st.dataframe(st.session_state.df_radon)
@@ -310,3 +310,37 @@ if st.session_state.df_radon is not None:
             file_name='datos_radon.csv',
             mime='text/csv',
         )
+
+    with tab3:
+        st.subheader("Mapa de Correlaciones")
+        
+        # Calcular la matriz de correlación
+        corr_matrix = st.session_state.df_radon.corr()
+        
+        # Crear mapa de calor con Plotly
+        fig_corr = px.imshow(
+            corr_matrix,
+            text_auto='.2f',  # Mostrar valores con 2 decimales
+            color_continuous_scale='RdBu_r',  # Escala de colores
+            aspect='auto',
+            title='Correlación entre variables'
+        )
+        
+        # Mejorar diseño
+        fig_corr.update_layout(
+            height=600,
+            width=800,
+            xaxis=dict(title=''),
+            yaxis=dict(title='')
+        )
+        
+        # Mostrar el mapa de correlaciones
+        st.plotly_chart(fig_corr, use_container_width=True)
+        
+        # Explicación
+        st.markdown("""
+        **Interpretación del mapa de correlaciones:**
+        - Los valores cercanos a 1 (azul intenso) indican una fuerte correlación positiva
+        - Los valores cercanos a -1 (rojo intenso) indican una fuerte correlación negativa
+        - Los valores cercanos a 0 indican poca o ninguna correlación
+        """)
