@@ -153,7 +153,7 @@ st.title("Visualizador Radón-RD200 y Meteorología 📈")
 # Main area
 
 # Crear pestañas para diferentes visualizaciones
-tab0, tab1, tab2, tab3, tab4 = st.tabs(["Configuración", "Datos", "Gráfica", "Estadísticas", "Correlaciones"])
+tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(["Configuración", "Datos", "Gráfica", "Estadísticas", "Histograma Radón", "Correlaciones"])
 
 with tab0:
     st.subheader("Carga de datos")
@@ -605,6 +605,146 @@ with tab3:
         st.info("No hay datos disponibles. Por favor, carga los archivos en la pestaña 'Configuración'.")
 
 with tab4:
+    st.subheader("Histograma Radón")
+    
+    if st.session_state.df_radon is not None:
+        # Verificar que la columna de radón existe
+        if 'Radon (Bq/m3)' in st.session_state.df_radon.columns:
+            # Añadir selector para filtrar por rango de tiempo
+            st.write("Selecciona un rango de tiempo para filtrar los datos:")
+            tiempo_min = st.session_state.df_radon.index.min().to_pydatetime()
+            tiempo_max = st.session_state.df_radon.index.max().to_pydatetime()
+            col_fecha1, col_fecha2 = st.columns(2)
+            with col_fecha1:
+                fecha_inicio = st.date_input("Fecha inicio", tiempo_min.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date(), key="hist_fecha_inicio")
+                hora_inicio = st.time_input("Hora inicio", tiempo_min.time(), key="hist_hora_inicio")
+            with col_fecha2:
+                fecha_fin = st.date_input("Fecha fin", tiempo_max.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date(), key="hist_fecha_fin")
+                hora_fin = st.time_input("Hora fin", tiempo_max.time(), key="hist_hora_fin")
+            
+            # Crear timestamp combinando fecha y hora
+            timestamp_inicio = datetime.combine(fecha_inicio, hora_inicio)
+            timestamp_fin = datetime.combine(fecha_fin, hora_fin)
+            
+            # Filtrar DataFrame por el rango de tiempo seleccionado
+            df_filtrado = st.session_state.df_radon.loc[timestamp_inicio:timestamp_fin]
+            
+            # Configuración del histograma
+            with st.expander("Configuración del histograma", expanded=True):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    num_bins = st.slider("Número de intervalos (bins)", min_value=5, max_value=100, value=30, key="num_bins_radon")
+                    hist_color = st.color_picker("Color del histograma", "#1f77b4", key="hist_color")
+                
+                with col2:
+                    mostrar_media = st.checkbox("Mostrar línea de media", value=True, key="mostrar_media")
+                    mostrar_mediana = st.checkbox("Mostrar línea de mediana", value=True, key="mostrar_mediana")
+                    mostrar_limite_300 = st.checkbox("Mostrar línea de límite (300 Bq/m³)", value=True, key="mostrar_limite")
+                    normalizado = st.checkbox("Histograma normalizado", value=False, key="hist_normalizado")
+            
+            # Crear contenedor para estadísticas básicas del radón
+            with st.container(border=True):
+                col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
+                
+                # Calcular estadísticas del radón
+                media = df_filtrado['Radon (Bq/m3)'].mean()
+                mediana = df_filtrado['Radon (Bq/m3)'].median()
+                maximo = df_filtrado['Radon (Bq/m3)'].max()
+                minimo = df_filtrado['Radon (Bq/m3)'].min()
+                std = df_filtrado['Radon (Bq/m3)'].std()
+                cv = (std / media) * 100 if media > 0 else 0  # Coeficiente de variación
+                
+                percentil_25 = df_filtrado['Radon (Bq/m3)'].quantile(0.25)
+                percentil_75 = df_filtrado['Radon (Bq/m3)'].quantile(0.75)
+                percentil_95 = df_filtrado['Radon (Bq/m3)'].quantile(0.95)
+                
+                # Calcular porcentaje de valores por encima de 300 Bq/m³
+                pct_sobre_limite = (df_filtrado['Radon (Bq/m3)'] > 300).mean() * 100
+                
+                with col_stats1:
+                    st.metric("Media", f"{media:.2f} Bq/m³")
+                    st.metric("Mínimo", f"{minimo:.2f} Bq/m³")
+                
+                with col_stats2:
+                    st.metric("Mediana", f"{mediana:.2f} Bq/m³")
+                    st.metric("Máximo", f"{maximo:.2f} Bq/m³")
+                
+                with col_stats3:
+                    st.metric("Desv. Estándar", f"{std:.2f} Bq/m³")
+                    st.metric("Coef. Variación", f"{cv:.2f}%")
+                
+                with col_stats4:
+                    st.metric("Percentil 75", f"{percentil_75:.2f} Bq/m³")
+                    st.metric("% sobre límite", f"{pct_sobre_limite:.2f}%")
+            
+            # Crear histograma
+            histnorm = 'probability density' if normalizado else None
+            fig_hist = px.histogram(
+                df_filtrado, 
+                x='Radon (Bq/m3)',
+                nbins=num_bins,
+                histnorm=histnorm,
+                title=f'Histograma de Radón ({len(df_filtrado)} mediciones)',
+                labels={'Radon (Bq/m3)': 'Concentración de Radón (Bq/m³)'},
+                color_discrete_sequence=[hist_color]
+            )
+            
+            # Añadir línea vertical con la media si se selecciona
+            if mostrar_media:
+                fig_hist.add_vline(
+                    x=media, 
+                    line_dash="dash", 
+                    line_color="red",
+                    annotation_text=f"Media: {media:.1f} Bq/m³",
+                    annotation_position="top right"
+                )
+            
+            # Añadir línea vertical con la mediana si se selecciona
+            if mostrar_mediana:
+                fig_hist.add_vline(
+                    x=mediana, 
+                    line_dash="dot", 
+                    line_color="green",
+                    annotation_text=f"Mediana: {mediana:.1f} Bq/m³",
+                    annotation_position="top left"
+                )
+            
+            # Añadir línea vertical con el límite de 300 Bq/m³ si se selecciona
+            if mostrar_limite_300:
+                fig_hist.add_vline(
+                    x=300, 
+                    line_dash="solid", 
+                    line_color="black",
+                    annotation_text="Límite: 300 Bq/m³",
+                    annotation_position="bottom right"
+                )
+            
+            # Mejorar diseño
+            fig_hist.update_layout(
+                xaxis_title="Concentración de Radón (Bq/m³)",
+                yaxis_title="Frecuencia" if not normalizado else "Densidad",
+                height=600,
+            )
+            
+            # Mostrar histograma
+            st.plotly_chart(fig_hist, use_container_width=True)
+            
+            # Añadir opción para descargar los datos filtrados
+            csv = df_filtrado[['Radon (Bq/m3)']].to_csv().encode('utf-8')
+            st.download_button(
+                label="Descargar datos de radón como CSV",
+                data=csv,
+                file_name='datos_radon_filtrado.csv',
+                mime='text/csv',
+                key="descarga_radon_filtrado"
+            )
+        else:
+            st.warning("No se encuentra la columna 'Radon (Bq/m3)' en los datos cargados.")
+    else:
+        st.info("No hay datos disponibles. Por favor, carga los archivos en la pestaña 'Configuración'.")
+
+with tab5:
     st.subheader("Mapa de Correlaciones")
     
     if st.session_state.df_radon is not None:
