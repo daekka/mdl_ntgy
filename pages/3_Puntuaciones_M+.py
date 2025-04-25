@@ -9,6 +9,11 @@ import json
 from openpyxl.styles import Alignment
 import ast
 
+st.set_page_config(
+    page_title="M+ LLM",
+    page_icon="🗯️",
+    layout="wide",
+)
 
 # CSS personalizado para cambiar ancho del sidebar
 st.markdown("""
@@ -83,11 +88,6 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
     #st.write(event)
     return(event)
 
-st.set_page_config(
-    page_title="M+ LLM",
-    page_icon="🗯️",
-    layout="wide",
-)
 
 
 st.title("Completar M+ con LLM🗯️")
