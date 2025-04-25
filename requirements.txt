@@ -5,4 +5,5 @@ xlsxwriter
 plotly
 openai
 httpx[http2]
+scikit-learn
 

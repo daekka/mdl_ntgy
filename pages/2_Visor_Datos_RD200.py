@@ -153,7 +153,7 @@ st.title("Visualizador Radón-RD200 y Meteorología 📈")
 # Main area
 
 # Crear pestañas para diferentes visualizaciones
-tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(["Configuración", "Datos", "Gráfica", "Estadísticas", "Histograma Radón", "Correlaciones"])
+tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Configuración", "Datos", "Gráfica", "Estadísticas", "Histograma Radón", "Correlaciones", "Modelo Predicción"])
 
 with tab0:
     st.subheader("Carga de datos")
@@ -778,5 +778,412 @@ with tab5:
         - Los valores cercanos a -1 (rojo intenso) indican una fuerte correlación negativa
         - Los valores cercanos a 0 indican poca o ninguna correlación
         """)
+    else:
+        st.info("No hay datos disponibles. Por favor, carga los archivos en la pestaña 'Configuración'.")
+
+with tab6:
+    st.subheader("Modelo de Predicción de Radón")
+    
+    if st.session_state.df_radon is not None:
+        # Importamos las bibliotecas necesarias al principio
+        import sklearn
+        from sklearn.model_selection import train_test_split
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+        import pandas as pd
+        import numpy as np
+        from datetime import time, datetime, timedelta
+
+        # Verificamos que la columna de radón existe
+        if 'Radon (Bq/m3)' in st.session_state.df_radon.columns:
+            # Crear un DataFrame para el modelo
+            df_modelo = st.session_state.df_radon.copy()
+            
+            # Añadir características temporales
+            df_modelo['Hora'] = df_modelo.index.hour
+            df_modelo['DiaSemana'] = df_modelo.index.dayofweek
+            df_modelo['Mes'] = df_modelo.index.month
+            df_modelo['EsFinDeSemana'] = df_modelo['DiaSemana'].apply(lambda x: 1 if x >= 5 else 0)
+            
+            # Verificar si el timestamp está dentro del rango de horas sombreadas
+            def esta_en_rango_horas(timestamp, hora_inicio, hora_fin):
+                hora = timestamp.hour + timestamp.minute / 60
+                hora_inicio_decimal = hora_inicio.hour + hora_inicio.minute / 60
+                hora_fin_decimal = hora_fin.hour + hora_fin.minute / 60
+                
+                if hora_inicio_decimal <= hora_fin_decimal:
+                    return 1 if hora_inicio_decimal <= hora <= hora_fin_decimal else 0
+                else:
+                    # Caso especial: el rango cruza la medianoche
+                    return 1 if hora >= hora_inicio_decimal or hora <= hora_fin_decimal else 0
+            
+            # Aplicar la función para marcar si está dentro del rango de horas sombreadas
+            df_modelo['EnRangoHoras'] = df_modelo.index.map(
+                lambda x: esta_en_rango_horas(x, st.session_state.hora_linea1, st.session_state.hora_linea2)
+            )
+            
+            # Interfaz para configurar el modelo
+            st.write("### Configuración del Modelo")
+            
+            # Dividir la configuración en columnas
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Selector de variables predictoras disponibles
+                variables_disponibles = [col for col in df_modelo.columns if col != 'Radon (Bq/m3)']
+                vars_seleccionadas = st.multiselect(
+                    "Selecciona variables predictoras:",
+                    variables_disponibles,
+                    default=['Hora', 'DiaSemana', 'EnRangoHoras', 'EsFinDeSemana', 'Temperatura', 'Humedad']
+                    if all(var in variables_disponibles for var in ['Temperatura', 'Humedad'])
+                    else variables_disponibles[:min(4, len(variables_disponibles))]
+                )
+                
+                # Porcentaje de datos para entrenamiento
+                test_size = st.slider("Porcentaje de datos para prueba (%)", 10, 50, 20)
+                test_size = test_size / 100  # Convertir a proporción
+            
+            with col2:
+                # Parámetros del modelo RandomForest
+                n_estimators = st.slider("Número de árboles", 10, 500, 100)
+                max_depth = st.slider("Profundidad máxima de los árboles", 2, 30, 10)
+                random_state = 42  # Valor fijo para reproducibilidad
+            
+            # Botón para entrenar el modelo
+            if st.button("Entrenar Modelo", use_container_width=True):
+                if len(vars_seleccionadas) < 1:
+                    st.error("Por favor, selecciona al menos una variable predictora.")
+                else:
+                    # Crear X e y para el modelo
+                    X = df_modelo[vars_seleccionadas]
+                    y = df_modelo['Radon (Bq/m3)']
+                    
+                    # Verificar y manejar valores faltantes
+                    if X.isna().any().any():
+                        st.warning("Se han detectado valores faltantes. Realizando imputación...")
+                        X = X.fillna(X.mean())
+                    
+                    # Dividir los datos en entrenamiento y prueba
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y, test_size=test_size, random_state=random_state
+                    )
+                    
+                    # Mostrar información sobre el conjunto de datos
+                    st.write(f"Datos de entrenamiento: {len(X_train)} registros")
+                    st.write(f"Datos de prueba: {len(X_test)} registros")
+                    
+                    # Crear y entrenar el modelo
+                    with st.spinner('Entrenando modelo...'):
+                        modelo = RandomForestRegressor(
+                            n_estimators=n_estimators,
+                            max_depth=max_depth,
+                            random_state=random_state
+                        )
+                        modelo.fit(X_train, y_train)
+                        
+                        # Hacer predicciones
+                        y_pred_train = modelo.predict(X_train)
+                        y_pred_test = modelo.predict(X_test)
+                        
+                        # Calcular métricas
+                        mae_train = mean_absolute_error(y_train, y_pred_train)
+                        rmse_train = np.sqrt(mean_squared_error(y_train, y_pred_train))
+                        r2_train = r2_score(y_train, y_pred_train)
+                        
+                        mae_test = mean_absolute_error(y_test, y_pred_test)
+                        rmse_test = np.sqrt(mean_squared_error(y_test, y_pred_test))
+                        r2_test = r2_score(y_test, y_pred_test)
+                    
+                    # Mostrar resultados
+                    st.write("### Resultados del Modelo")
+                    
+                    # Mostrar métricas en dos columnas
+                    col_met1, col_met2 = st.columns(2)
+                    
+                    with col_met1:
+                        st.write("#### Métricas en Entrenamiento")
+                        st.metric("MAE", f"{mae_train:.2f} Bq/m³")
+                        st.metric("RMSE", f"{rmse_train:.2f} Bq/m³")
+                        st.metric("R²", f"{r2_train:.3f}")
+                    
+                    with col_met2:
+                        st.write("#### Métricas en Prueba")
+                        st.metric("MAE", f"{mae_test:.2f} Bq/m³")
+                        st.metric("RMSE", f"{rmse_test:.2f} Bq/m³")
+                        st.metric("R²", f"{r2_test:.3f}")
+                    
+                    # Visualizar importancia de características
+                    importancia = pd.DataFrame({
+                        'Variable': vars_seleccionadas,
+                        'Importancia': modelo.feature_importances_
+                    }).sort_values('Importancia', ascending=False)
+                    
+                    st.write("### Importancia de Variables")
+                    fig_imp = px.bar(
+                        importancia, 
+                        x='Importancia', 
+                        y='Variable',
+                        orientation='h',
+                        title='Importancia de variables en el modelo',
+                        color='Importancia',
+                        color_continuous_scale='Viridis'
+                    )
+                    
+                    # Mejorar diseño
+                    fig_imp.update_layout(
+                        height=400,
+                        yaxis={'categoryorder': 'total ascending'}
+                    )
+                    
+                    st.plotly_chart(fig_imp, use_container_width=True)
+                    
+                    # Graficar predicciones vs valores reales
+                    df_resultados = pd.DataFrame({
+                        'Real': y_test,
+                        'Predicción': y_pred_test,
+                        'Error': y_test - y_pred_test
+                    })
+                    
+                    # Gráfica de dispersión
+                    fig_scatter = px.scatter(
+                        df_resultados,
+                        x='Real',
+                        y='Predicción',
+                        title='Valores reales vs. predicciones',
+                        labels={'Real': 'Valor Real (Bq/m³)', 'Predicción': 'Valor Predicho (Bq/m³)'}
+                    )
+                    
+                    # Añadir línea de referencia
+                    fig_scatter.add_trace(
+                        go.Scatter(
+                            x=[df_resultados['Real'].min(), df_resultados['Real'].max()],
+                            y=[df_resultados['Real'].min(), df_resultados['Real'].max()],
+                            mode='lines',
+                            name='Referencia',
+                            line=dict(color='red', dash='dash')
+                        )
+                    )
+                    
+                    # Mejorar diseño
+                    fig_scatter.update_layout(height=500)
+                    
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+                    
+                    # Sección de predicción interactiva
+                    st.write("### Realizar Predicción Personalizada")
+                    st.write("Configura los valores para realizar una predicción:")
+                    
+                    # Crear controles para cada variable seleccionada
+                    input_values = {}
+                    
+                    # Dividir en varias columnas para optimizar espacio
+                    num_cols = 3
+                    cols = st.columns(num_cols)
+                    
+                    for i, var in enumerate(vars_seleccionadas):
+                        col_idx = i % num_cols
+                        with cols[col_idx]:
+                            # Personalizar el widget según el tipo de variable
+                            if var == 'Hora':
+                                input_values[var] = st.slider(f"{var}", 0, 23, 12)
+                            elif var == 'DiaSemana':
+                                dias = {0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 
+                                        4: 'Viernes', 5: 'Sábado', 6: 'Domingo'}
+                                dia_seleccionado = st.selectbox(f"{var}", list(dias.keys()), 
+                                                                format_func=lambda x: dias[x])
+                                input_values[var] = dia_seleccionado
+                            elif var == 'Mes':
+                                meses = {1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 
+                                         5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+                                         9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'}
+                                mes_seleccionado = st.selectbox(f"{var}", list(meses.keys()), 
+                                                                format_func=lambda x: meses[x])
+                                input_values[var] = mes_seleccionado
+                            elif var == 'EsFinDeSemana':
+                                input_values[var] = st.checkbox(f"Es fin de semana", value=False)
+                            elif var == 'EnRangoHoras':
+                                input_values[var] = st.checkbox(f"En rango de horas sombreadas", value=True)
+                            else:
+                                # Para variables numéricas, crear slider con rango adaptado
+                                min_val = float(df_modelo[var].min())
+                                max_val = float(df_modelo[var].max())
+                                mean_val = float(df_modelo[var].mean())
+                                
+                                # Redondear a 1 decimal para mejor visualización
+                                step = (max_val - min_val) / 100
+                                step = max(0.1, round(step, 1))
+                                
+                                input_values[var] = st.slider(
+                                    f"{var}", 
+                                    min_value=float(min_val),
+                                    max_value=float(max_val),
+                                    value=float(mean_val),
+                                    step=step
+                                )
+                    
+                    # Botón para realizar predicción con valores personalizados
+                    if st.button("Realizar Predicción", key="btn_prediccion"):
+                        # Crear un DataFrame con los valores de entrada
+                        X_pred = pd.DataFrame([input_values])
+                        
+                        # Realizar predicción
+                        prediccion = modelo.predict(X_pred)[0]
+                        
+                        # Mostrar resultado
+                        st.write("#### Resultado de la Predicción")
+                        
+                        # Estilo visual según el nivel de radón
+                        color = "normal"
+                        mensaje = ""
+                        if prediccion > 300:
+                            color = "danger"
+                            mensaje = "⚠️ **Nivel por encima del límite recomendado.**"
+                        elif prediccion > 200:
+                            color = "warning"
+                            mensaje = "⚠️ **Nivel elevado, pero por debajo del límite.**"
+                        else:
+                            color = "success"
+                            mensaje = "✅ **Nivel dentro de los valores normales.**"
+                        
+                        st.metric(
+                            "Concentración de Radón Estimada",
+                            f"{prediccion:.2f} Bq/m³",
+                            delta=f"{prediccion - df_modelo['Radon (Bq/m3)'].mean():.2f} Bq/m³ respecto a la media"
+                        )
+                        
+                        st.markdown(f"<div style='padding: 10px; border-radius: 5px; background-color: {'red' if color=='danger' else 'orange' if color=='warning' else 'green'}; color: white;'>{mensaje}</div>", unsafe_allow_html=True)
+                        
+                        # Añadir recomendaciones según el nivel
+                        if color == "danger":
+                            st.markdown("""
+                                **Recomendaciones:**
+                                - Asegurar una buena ventilación del espacio.
+                                - Considerar el uso de sistemas de extracción.
+                                - Evitar permanecer en la zona durante períodos prolongados si es posible.
+                            """)
+                        elif color == "warning":
+                            st.markdown("""
+                                **Recomendaciones:**
+                                - Incrementar la ventilación del espacio.
+                                - Monitorizar los niveles regularmente.
+                            """)
+            
+            # Opcional: Análisis específico por rango de horas sombreadas
+            with st.expander("Análisis por Rango de Horas", expanded=False):
+                st.write("### Análisis de Niveles de Radón por Rango de Horas")
+                
+                # Crear un DataFrame para comparar niveles dentro y fuera del rango de horas
+                df_analisis = df_modelo.copy()
+                df_en_rango = df_analisis[df_analisis['EnRangoHoras'] == 1]
+                df_fuera_rango = df_analisis[df_analisis['EnRangoHoras'] == 0]
+                
+                # Calcular estadísticas
+                stats_en_rango = {
+                    'Media': df_en_rango['Radon (Bq/m3)'].mean(),
+                    'Mediana': df_en_rango['Radon (Bq/m3)'].median(),
+                    'Máximo': df_en_rango['Radon (Bq/m3)'].max(),
+                    'Mínimo': df_en_rango['Radon (Bq/m3)'].min(),
+                    'Desv. Est.': df_en_rango['Radon (Bq/m3)'].std(),
+                    'Registros': len(df_en_rango)
+                }
+                
+                stats_fuera_rango = {
+                    'Media': df_fuera_rango['Radon (Bq/m3)'].mean(),
+                    'Mediana': df_fuera_rango['Radon (Bq/m3)'].median(),
+                    'Máximo': df_fuera_rango['Radon (Bq/m3)'].max(),
+                    'Mínimo': df_fuera_rango['Radon (Bq/m3)'].min(),
+                    'Desv. Est.': df_fuera_rango['Radon (Bq/m3)'].std(),
+                    'Registros': len(df_fuera_rango)
+                }
+                
+                # Mostrar estadísticas en columnas
+                col_rango1, col_rango2 = st.columns(2)
+                
+                with col_rango1:
+                    st.write(f"#### En horas sombreadas ({st.session_state.hora_linea1.strftime('%H:%M')} - {st.session_state.hora_linea2.strftime('%H:%M')})")
+                    for key, value in stats_en_rango.items():
+                        if key != 'Registros':
+                            st.metric(key, f"{value:.2f}" + (" Bq/m³" if key != 'Registros' else ""))
+                        else:
+                            st.metric(key, f"{value}")
+                
+                with col_rango2:
+                    st.write("#### Fuera de horas sombreadas")
+                    for key, value in stats_fuera_rango.items():
+                        if key != 'Registros':
+                            st.metric(key, f"{value:.2f}" + (" Bq/m³" if key != 'Registros' else ""))
+                        else:
+                            st.metric(key, f"{value}")
+                
+                # Crear gráfico comparativo
+                data_comp = {
+                    'Categoría': ['En horas sombreadas', 'Fuera de horas sombreadas'],
+                    'Media': [stats_en_rango['Media'], stats_fuera_rango['Media']],
+                    'Mediana': [stats_en_rango['Mediana'], stats_fuera_rango['Mediana']],
+                    'Máximo': [stats_en_rango['Máximo'], stats_fuera_rango['Máximo']],
+                    'Mínimo': [stats_en_rango['Mínimo'], stats_fuera_rango['Mínimo']]
+                }
+                
+                df_comp = pd.DataFrame(data_comp)
+                df_comp_melt = pd.melt(df_comp, id_vars=['Categoría'], value_vars=['Media', 'Mediana', 'Máximo', 'Mínimo'])
+                
+                fig_comp = px.bar(
+                    df_comp_melt,
+                    x='Categoría',
+                    y='value',
+                    color='variable',
+                    barmode='group',
+                    title='Comparación de estadísticas por rango horario',
+                    labels={'value': 'Valor (Bq/m³)', 'variable': 'Estadística', 'Categoría': ''},
+                    color_discrete_sequence=px.colors.qualitative.G10
+                )
+                
+                # Añadir línea de límite
+                fig_comp.add_shape(
+                    type="line",
+                    x0=-0.5,
+                    y0=300,
+                    x1=1.5,
+                    y1=300,
+                    line=dict(color="red", width=2, dash="dash"),
+                    name="Límite"
+                )
+                
+                fig_comp.add_annotation(
+                    x=1.5,
+                    y=300,
+                    text="Límite: 300 Bq/m³",
+                    showarrow=False,
+                    xshift=10,
+                    font=dict(color="red")
+                )
+                
+                # Mejorar diseño
+                fig_comp.update_layout(
+                    height=500,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    )
+                )
+                
+                st.plotly_chart(fig_comp, use_container_width=True)
+                
+                # Añadir interpretación
+                diferencia = stats_en_rango['Media'] - stats_fuera_rango['Media']
+                porcentaje = (diferencia / stats_fuera_rango['Media']) * 100
+                
+                if abs(porcentaje) > 10:
+                    if diferencia > 0:
+                        st.info(f"Los niveles de radón son un {porcentaje:.1f}% más altos durante las horas sombreadas.")
+                    else:
+                        st.info(f"Los niveles de radón son un {abs(porcentaje):.1f}% más bajos durante las horas sombreadas.")
+                else:
+                    st.info("No hay diferencias significativas entre los niveles de radón dentro y fuera del rango de horas seleccionado.")
+        else:
+            st.warning("No se encuentra la columna 'Radon (Bq/m3)' en los datos cargados.")
     else:
         st.info("No hay datos disponibles. Por favor, carga los archivos en la pestaña 'Configuración'.")
