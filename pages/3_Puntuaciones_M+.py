@@ -72,21 +72,35 @@ class puntuaciones(BaseModel):
     Ámbito: str
 
 def LLM_Consulta(client, system_prompt = "", descripcion =""):
-    # Realiza la solicitud al modelo desplegado
-    completion = client.chat.completions.create(
-        model="gpt-4o",  # Este es el nombre del *deployment*, no el modelo base. Usa el que configuraste en Azure.
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": descripcion},
-        ],
-        #response_format=puntuaciones,
-        response_format={"type": "json_object"},
-    )
+    try:
+        # Realiza la solicitud al modelo desplegado
+        completion = client.chat.completions.create(
+            model="gpt-4o",  # Este es el nombre del *deployment*, no el modelo base. Usa el que configuraste en Azure.
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": descripcion},
+            ],
+            temperature=0.2 ,
+            #response_format=puntuaciones,
+            response_format={"type": "json_object"},
+        )
 
-      # Accede al contenido de la respuesta
-    event = completion.choices[0].message.content
-    #st.write(event)
-    return(event)
+        # Accede al contenido de la respuesta
+        event = completion.choices[0].message.content
+        #st.write(event)
+        return(event)
+    except Exception as e:
+        st.error(f"Error en la consulta al LLM: {str(e)}")
+        # Devuelve un JSON con valores nulos en caso de error
+        return json.dumps({
+            "SEVERIDAD": None,
+            "PROBABILIDAD": None,
+            "AMBITO": None,
+            "PREGUNTAS": None,
+            "ANALISIS": None,
+            "RIESGOS": None,
+            "RECOMENDACIONES": None
+        })
 
 
 
@@ -143,7 +157,7 @@ if uploaded_file is not None and client is not None:
         # Cargar libro con openpyxl
         wb = load_workbook(filename=in_memory_file)
         hojas = wb.sheetnames
-        hoja_seleccionada = st.selectbox("Selecciona la hoja a tratar", hojas)
+        hoja_seleccionada = st.selectbox("Selecciona la hoja a tratar", hojas, index=hojas.index("Paralizaciones"))
 
         if hoja_seleccionada:
             ws = wb[hoja_seleccionada]
@@ -177,16 +191,22 @@ if uploaded_file is not None and client is not None:
                         progress_text = "LLM trabajando..."
                         barra_progreso = st.progress(0, text=progress_text)
                         for i, row in df.iterrows():
+                            st.divider()
+                            st.write(row.get(columnas_descripcion)[0])
                             if pd.isna(row.get("Severidad")) and pd.isna(row.get("Probabilidad")) and pd.isna(row.get("Ámbito")):
                                 completado_raw = LLM_Consulta(client, system_prompt= system_instructions, descripcion=row.get(columnas_descripcion)[0])
                                 completado = json.loads(completado_raw)
                                 
-                                df.at[i, "Severidad"] = completado["SEVERIDAD"]
-                                df.at[i, "Probabilidad"] = completado["PROBABILIDAD"]
-                                df.at[i, "Ámbito"] = completado["AMBITO"]
+                                # Verificar si los valores son nulos antes de asignarlos
+                                if completado["SEVERIDAD"] is not None:
+                                    df.at[i, "Severidad"] = completado["SEVERIDAD"]
+                                if completado["PROBABILIDAD"] is not None:
+                                    df.at[i, "Probabilidad"] = completado["PROBABILIDAD"]
+                                if completado["AMBITO"] is not None:
+                                    df.at[i, "Ámbito"] = completado["AMBITO"]
                                 
-                                # Añadir los campos adicionales
-                                if "PREGUNTAS" in completado:
+                                # Añadir los campos adicionales solo si no son nulos
+                                if "PREGUNTAS" in completado and completado["PREGUNTAS"] is not None:
                                     if "Preguntas" not in df.columns:
                                         df["Preguntas"] = None
                                     # Si es una lista, unir elementos con retorno de carro
@@ -195,7 +215,7 @@ if uploaded_file is not None and client is not None:
                                     else:
                                         df.at[i, "Preguntas"] = completado["PREGUNTAS"]
                                     
-                                if "ANALISIS" in completado:
+                                if "ANALISIS" in completado and completado["ANALISIS"] is not None:
                                     if "Análisis" not in df.columns:
                                         df["Análisis"] = None
                                     # Si es una lista, unir elementos con retorno de carro
@@ -204,7 +224,7 @@ if uploaded_file is not None and client is not None:
                                     else:
                                         df.at[i, "Análisis"] = completado["ANALISIS"]
                                     
-                                if "RIESGOS" in completado:
+                                if "RIESGOS" in completado and completado["RIESGOS"] is not None:
                                     if "Riesgos" not in df.columns:
                                         df["Riesgos"] = None
                                     # Si es una lista, unir elementos con retorno de carro
@@ -213,7 +233,7 @@ if uploaded_file is not None and client is not None:
                                     else:
                                         df.at[i, "Riesgos"] = completado["RIESGOS"]
                                     
-                                if "RECOMENDACIONES" in completado:
+                                if "RECOMENDACIONES" in completado and completado["RECOMENDACIONES"] is not None:
                                     if "Recomendaciones" not in df.columns:
                                         df["Recomendaciones"] = None
                                     # Si es una lista, unir elementos con retorno de carro
@@ -221,7 +241,24 @@ if uploaded_file is not None and client is not None:
                                         df.at[i, "Recomendaciones"] = "\n".join(completado["RECOMENDACIONES"])
                                     else:
                                         df.at[i, "Recomendaciones"] = completado["RECOMENDACIONES"]
-                                
+
+                                # Mostrar solo si hay valores no nulos
+                                if all(val is not None for val in [completado.get("SEVERIDAD"), completado.get("PROBABILIDAD"), completado.get("AMBITO")]):
+                                    st.markdown(f":violet-badge[{completado['SEVERIDAD']}] :orange-badge[{completado['PROBABILIDAD']}] :blue-badge[{completado['AMBITO']}]", unsafe_allow_html=True)
+                                    with st.expander("Conclusiones LLM 📝", expanded=False):
+                                        col1, col2, col3, col4 = st.columns(4)
+                                        with col1:
+                                            st.write(completado["PREGUNTAS"])
+                                        with col2:
+                                            st.write(completado["ANALISIS"])
+                                        with col3:
+                                            st.write(completado["RIESGOS"])
+                                        with col4:
+                                            st.write(completado["RECOMENDACIONES"]) 
+
+                                else:
+                                    st.warning("No se pudieron obtener todas las puntuaciones para este registro.")
+
                                 filas_completadas.append(i)
                                 barra_progreso.progress((len(filas_completadas) / len(df)), text=progress_text)
                         st.success("Datos completados.")
