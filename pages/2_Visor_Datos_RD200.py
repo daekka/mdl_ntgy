@@ -171,20 +171,22 @@ with tab0:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        nuevo_archivo = st.file_uploader("Cargar archivo de datos de radón", type=["txt"], key="nuevo_radon")
+        nuevo_archivo = st.file_uploader("📇Cargar archivo de datos de radón", type=["txt"], key="nuevo_radon")
         
     with col2:
-        nueva_fecha = st.date_input("Fecha inicial", datetime(2025, 4, 21).date(), key="nueva_fecha")
-        nueva_hora = st.time_input("Hora inicial", st.session_state.hora_inicial, key="nueva_hora")
+        nueva_fecha = st.date_input("📆 Fecha inicial", datetime(2025, 4, 21).date(), key="nueva_fecha")
+        nueva_hora = st.time_input("🕒 Hora inicial", st.session_state.hora_inicial, key="nueva_hora")
         
     with col3:
         st.page_link("https://www.meteogalicia.gal/web/observacion/rede-meteoroloxica/historico", label="Meteogalicia", icon="🌎")
         # Widget para cargar el archivo JSON meteorológico
         nuevo_archivo_meteo = st.file_uploader("Cargar archivo JSON meteorológico", type=["json"], key="nuevo_meteo")
 
+    
     # Botón centrado
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
     with col_btn2:
+        st.divider()
         if st.button("Actualizar datos", use_container_width=True, key="actualizar_btn"):
             if nuevo_archivo is None:
                 st.error("Por favor, carga un archivo de datos de radón.")
@@ -427,20 +429,22 @@ with tab3:
     st.subheader("Estadísticas")
 
     if st.session_state.df_radon is not None:
+        
         # Variables disponibles para estadísticas
         variables_disponibles = list(st.session_state.df_radon.columns)
         
         # Añadir selector para filtrar por rango de tiempo
-        st.write("Selecciona un rango de tiempo para filtrar los datos:")
-        tiempo_min = st.session_state.df_radon.index.min().to_pydatetime()
-        tiempo_max = st.session_state.df_radon.index.max().to_pydatetime()
-        col_fecha1, col_fecha2 = st.columns(2)
-        with col_fecha1:
-            fecha_inicio = st.date_input("Fecha inicio", tiempo_min.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date())
-            hora_inicio = st.time_input("Hora inicio", tiempo_min.time())
-        with col_fecha2:
-            fecha_fin = st.date_input("Fecha fin", tiempo_max.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date())
-            hora_fin = st.time_input("Hora fin", tiempo_max.time())
+        with st.expander("🔍 Filtrar por rango de tiempo", expanded=False):
+            st.write("Selecciona un rango de tiempo para filtrar los datos:")
+            tiempo_min = st.session_state.df_radon.index.min().to_pydatetime()
+            tiempo_max = st.session_state.df_radon.index.max().to_pydatetime()
+            col_fecha1, col_fecha2 = st.columns(2)
+            with col_fecha1:
+                fecha_inicio = st.date_input("Fecha inicio", tiempo_min.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date())
+                hora_inicio = st.time_input("Hora inicio", tiempo_min.time())
+            with col_fecha2:
+                fecha_fin = st.date_input("Fecha fin", tiempo_max.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date())
+                hora_fin = st.time_input("Hora fin", tiempo_max.time())
         
         # Crear timestamp combinando fecha y hora
         timestamp_inicio = datetime.combine(fecha_inicio, hora_inicio)
@@ -449,36 +453,40 @@ with tab3:
         # Filtrar DataFrame por el rango de tiempo seleccionado
         df_filtrado = st.session_state.df_radon.loc[timestamp_inicio:timestamp_fin]
         
-        # Dividir en dos columnas para la visualización
-        col_izq, col_der = st.columns([3, 2])
-        
-        # Panel de métricas básicas
-        with col_der:
-            st.write("#### Métricas básicas")
+        with st.expander("📏 Métricas básicas", expanded=False):
+            col1, col2 = st.columns(2)
             for i, variable in enumerate(variables_disponibles):
                 # Diseño mejorado para las métricas
-                with st.container(border=True):
-                    st.markdown(f"**{variable}**")
-                    
-                    media = df_filtrado[variable].mean()
-                    maximo = df_filtrado[variable].max()
-                    minimo = df_filtrado[variable].min()
-                    std = df_filtrado[variable].std()
-                    
-                    # Mejorar presentación de estadísticas con iconos
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.metric("Media", f"{media:.2f}")
-                        st.metric("Desv. Est.", f"{std:.2f}")
-                    with c2:
-                        st.metric("Máximo", f"{maximo:.2f}")
-                        st.metric("Mínimo", f"{minimo:.2f}")
-        
-        # Contenedor izquierdo para gráficos
-        with col_izq:
-            # Pestañas para diferentes tipos de gráficos
-            tab_bar, tab_box, tab_hist = st.tabs(["Barras", "Boxplot", "Histograma"])
+                if i % 2 == 0:
+                    col = col1
+                else:
+                    col = col2
+                
+                with col:
+                    with st.container(border=True):
+                        st.markdown(f"**{variable}**")
+                        
+                        media = df_filtrado[variable].mean()
+                        maximo = df_filtrado[variable].max()
+                        minimo = df_filtrado[variable].min()
+                        std = df_filtrado[variable].std()
+                        
+                        # Mejorar presentación de estadísticas con iconos
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.metric("Media", f"{media:.2f}")
+                            st.metric("Desv. Est.", f"{std:.2f}")
+                        with c2:
+                            st.metric("Máximo", f"{maximo:.2f}")
+                            st.metric("Mínimo", f"{minimo:.2f}")
+
             
+        
+
+        # Pestañas para diferentes tipos de gráficos
+        with st.expander("📊 Gráficos", expanded=False):
+            tab_bar, tab_box, tab_hist = st.tabs(["Barras", "Boxplot", "Histograma"])
+        
             # Crear un gráfico de barras para comparar medias, máximos y mínimos
             with tab_bar:
                 st.write("#### Comparativa de variables")
@@ -610,26 +618,64 @@ with tab3:
                 )
                 
                 st.plotly_chart(fig_hist, use_container_width=True)
-        
+            
         # Separador para la nueva sección
-        st.markdown("---")
-        st.subheader("Análisis de Niveles de Radón por Rango de Horas")
-        
-        # Verificar que la columna de radón existe
-        if 'Radon (Bq/m3)' in st.session_state.df_radon.columns:
-            # Crear un DataFrame para el análisis
-            if 'df_modelo' not in st.session_state or st.session_state.df_modelo is None:
-                # Si no existe, crearlo ahora
-                df_analisis = st.session_state.df_radon.copy()
+        with st.expander("📊 Análisis de Niveles de Radón por Rango de Horas", expanded=False):
+            st.markdown("---")
+            st.subheader("Análisis de Niveles de Radón por Rango de Horas")
+            
+            # Verificar que la columna de radón existe
+            if 'Radon (Bq/m3)' in st.session_state.df_radon.columns:
+                # Crear un DataFrame para el análisis
+                if 'df_modelo' not in st.session_state or st.session_state.df_modelo is None:
+                    # Si no existe, crearlo ahora
+                    df_analisis = st.session_state.df_radon.copy()
+                    
+                    # Añadir características temporales
+                    df_analisis['Hora'] = df_analisis.index.hour
+                    df_analisis['DiaSemana'] = df_analisis.index.dayofweek
+                    df_analisis['Mes'] = df_analisis.index.month
+                    df_analisis['EsFinDeSemana'] = df_analisis['DiaSemana'].apply(lambda x: 1 if x >= 5 else 0)
+                    
+                    # Verificar si el timestamp está dentro del rango de horas sombreadas
+                    def esta_en_rango_horas(timestamp, hora_inicio, hora_fin):
+                        hora = timestamp.hour + timestamp.minute / 60
+                        hora_inicio_decimal = hora_inicio.hour + hora_inicio.minute / 60
+                        hora_fin_decimal = hora_fin.hour + hora_fin.minute / 60
+                        
+                        if hora_inicio_decimal <= hora_fin_decimal:
+                            return 1 if hora_inicio_decimal <= hora <= hora_fin_decimal else 0
+                        else:
+                            # Caso especial: el rango cruza la medianoche
+                            return 1 if hora >= hora_inicio_decimal or hora <= hora_fin_decimal else 0
+                    
+                    # Aplicar la función para marcar si está dentro del rango de horas sombreadas
+                    df_analisis['EnRangoHoras'] = df_analisis.index.map(
+                        lambda x: esta_en_rango_horas(x, st.session_state.hora_linea1, st.session_state.hora_linea2)
+                    )
+                else:
+                    # Usar el DataFrame que ya existe
+                    df_analisis = st.session_state.df_modelo.copy()
                 
-                # Añadir características temporales
-                df_analisis['Hora'] = df_analisis.index.hour
-                df_analisis['DiaSemana'] = df_analisis.index.dayofweek
-                df_analisis['Mes'] = df_analisis.index.month
-                df_analisis['EsFinDeSemana'] = df_analisis['DiaSemana'].apply(lambda x: 1 if x >= 5 else 0)
+                # Permitir al usuario modificar las horas de análisis
+                col_config1, col_config2 = st.columns(2)
                 
-                # Verificar si el timestamp está dentro del rango de horas sombreadas
-                def esta_en_rango_horas(timestamp, hora_inicio, hora_fin):
+                with col_config1:
+                    hora_inicio_analisis = st.time_input(
+                        "Hora de inicio del rango", 
+                        st.session_state.hora_linea1,
+                        key="hora_inicio_analisis"
+                    )
+                
+                with col_config2:
+                    hora_fin_analisis = st.time_input(
+                        "Hora de fin del rango", 
+                        st.session_state.hora_linea2,
+                        key="hora_fin_analisis"
+                    )
+                
+                # Actualizar las horas en el DataFrame
+                def esta_en_rango_horas_actualizado(timestamp, hora_inicio, hora_fin):
                     hora = timestamp.hour + timestamp.minute / 60
                     hora_inicio_decimal = hora_inicio.hour + hora_inicio.minute / 60
                     hora_fin_decimal = hora_fin.hour + hora_fin.minute / 60
@@ -640,280 +686,243 @@ with tab3:
                         # Caso especial: el rango cruza la medianoche
                         return 1 if hora >= hora_inicio_decimal or hora <= hora_fin_decimal else 0
                 
-                # Aplicar la función para marcar si está dentro del rango de horas sombreadas
                 df_analisis['EnRangoHoras'] = df_analisis.index.map(
-                    lambda x: esta_en_rango_horas(x, st.session_state.hora_linea1, st.session_state.hora_linea2)
+                    lambda x: esta_en_rango_horas_actualizado(x, hora_inicio_analisis, hora_fin_analisis)
                 )
-            else:
-                # Usar el DataFrame que ya existe
-                df_analisis = st.session_state.df_modelo.copy()
-            
-            # Permitir al usuario modificar las horas de análisis
-            col_config1, col_config2 = st.columns(2)
-            
-            with col_config1:
-                hora_inicio_analisis = st.time_input(
-                    "Hora de inicio del rango", 
-                    st.session_state.hora_linea1,
-                    key="hora_inicio_analisis"
-                )
-            
-            with col_config2:
-                hora_fin_analisis = st.time_input(
-                    "Hora de fin del rango", 
-                    st.session_state.hora_linea2,
-                    key="hora_fin_analisis"
-                )
-            
-            # Actualizar las horas en el DataFrame
-            def esta_en_rango_horas_actualizado(timestamp, hora_inicio, hora_fin):
-                hora = timestamp.hour + timestamp.minute / 60
-                hora_inicio_decimal = hora_inicio.hour + hora_inicio.minute / 60
-                hora_fin_decimal = hora_fin.hour + hora_fin.minute / 60
                 
-                if hora_inicio_decimal <= hora_fin_decimal:
-                    return 1 if hora_inicio_decimal <= hora <= hora_fin_decimal else 0
-                else:
-                    # Caso especial: el rango cruza la medianoche
-                    return 1 if hora >= hora_inicio_decimal or hora <= hora_fin_decimal else 0
-            
-            df_analisis['EnRangoHoras'] = df_analisis.index.map(
-                lambda x: esta_en_rango_horas_actualizado(x, hora_inicio_analisis, hora_fin_analisis)
-            )
-            
-            # Dividir por rango de horas
-            df_en_rango = df_analisis[df_analisis['EnRangoHoras'] == 1]
-            df_fuera_rango = df_analisis[df_analisis['EnRangoHoras'] == 0]
-            
-            # Calcular estadísticas
-            stats_en_rango = {
-                'Media': df_en_rango['Radon (Bq/m3)'].mean(),
-                'Mediana': df_en_rango['Radon (Bq/m3)'].median(),
-                'Máximo': df_en_rango['Radon (Bq/m3)'].max(),
-                'Mínimo': df_en_rango['Radon (Bq/m3)'].min(),
-                'Desv. Est.': df_en_rango['Radon (Bq/m3)'].std(),
-                'Registros': len(df_en_rango)
-            }
-            
-            stats_fuera_rango = {
-                'Media': df_fuera_rango['Radon (Bq/m3)'].mean(),
-                'Mediana': df_fuera_rango['Radon (Bq/m3)'].median(),
-                'Máximo': df_fuera_rango['Radon (Bq/m3)'].max(),
-                'Mínimo': df_fuera_rango['Radon (Bq/m3)'].min(),
-                'Desv. Est.': df_fuera_rango['Radon (Bq/m3)'].std(),
-                'Registros': len(df_fuera_rango)
-            }
-            
-            # Mostrar estadísticas en columnas
-            col_rango1, col_rango2 = st.columns(2)
-            
-            with col_rango1:
-                st.write(f"#### En horas seleccionadas ({hora_inicio_analisis.strftime('%H:%M')} - {hora_fin_analisis.strftime('%H:%M')})")
-                for key, value in stats_en_rango.items():
-                    if key != 'Registros':
-                        st.metric(key, f"{value:.2f}" + (" Bq/m³" if key != 'Registros' else ""))
-                    else:
-                        st.metric(key, f"{value}")
-            
-            with col_rango2:
-                st.write("#### Fuera de horas seleccionadas")
-                for key, value in stats_fuera_rango.items():
-                    if key != 'Registros':
-                        st.metric(key, f"{value:.2f}" + (" Bq/m³" if key != 'Registros' else ""))
-                    else:
-                        st.metric(key, f"{value}")
-            
-            # Crear gráfico comparativo
-            data_comp = {
-                'Categoría': ['En horas seleccionadas', 'Fuera de horas seleccionadas'],
-                'Media': [stats_en_rango['Media'], stats_fuera_rango['Media']],
-                'Mediana': [stats_en_rango['Mediana'], stats_fuera_rango['Mediana']],
-                'Máximo': [stats_en_rango['Máximo'], stats_fuera_rango['Máximo']],
-                'Mínimo': [stats_en_rango['Mínimo'], stats_fuera_rango['Mínimo']]
-            }
-            
-            df_comp = pd.DataFrame(data_comp)
-            df_comp_melt = pd.melt(df_comp, id_vars=['Categoría'], value_vars=['Media', 'Mediana', 'Máximo', 'Mínimo'])
-            
-            fig_comp = px.bar(
-                df_comp_melt,
-                x='Categoría',
-                y='value',
-                color='variable',
-                barmode='group',
-                title='Comparación de estadísticas por rango horario',
-                labels={'value': 'Valor (Bq/m³)', 'variable': 'Estadística', 'Categoría': ''},
-                color_discrete_sequence=px.colors.qualitative.G10
-            )
-            
-            # Añadir línea de límite
-            fig_comp.add_shape(
-                type="line",
-                x0=-0.5,
-                y0=300,
-                x1=1.5,
-                y1=300,
-                line=dict(color="red", width=2, dash="dash"),
-                name="Límite"
-            )
-            
-            fig_comp.add_annotation(
-                x=1.5,
-                y=300,
-                text="Límite: 300 Bq/m³",
-                showarrow=False,
-                xshift=10,
-                font=dict(color="red")
-            )
-            
-            # Mejorar diseño
-            fig_comp.update_layout(
-                height=500,
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
+                # Dividir por rango de horas
+                df_en_rango = df_analisis[df_analisis['EnRangoHoras'] == 1]
+                df_fuera_rango = df_analisis[df_analisis['EnRangoHoras'] == 0]
+                
+                # Calcular estadísticas
+                stats_en_rango = {
+                    'Media': df_en_rango['Radon (Bq/m3)'].mean(),
+                    'Mediana': df_en_rango['Radon (Bq/m3)'].median(),
+                    'Máximo': df_en_rango['Radon (Bq/m3)'].max(),
+                    'Mínimo': df_en_rango['Radon (Bq/m3)'].min(),
+                    'Desv. Est.': df_en_rango['Radon (Bq/m3)'].std(),
+                    'Registros': len(df_en_rango)
+                }
+                
+                stats_fuera_rango = {
+                    'Media': df_fuera_rango['Radon (Bq/m3)'].mean(),
+                    'Mediana': df_fuera_rango['Radon (Bq/m3)'].median(),
+                    'Máximo': df_fuera_rango['Radon (Bq/m3)'].max(),
+                    'Mínimo': df_fuera_rango['Radon (Bq/m3)'].min(),
+                    'Desv. Est.': df_fuera_rango['Radon (Bq/m3)'].std(),
+                    'Registros': len(df_fuera_rango)
+                }
+                
+                # Mostrar estadísticas en columnas
+                col_rango1, col_rango2 = st.columns(2)
+                
+                with col_rango1:
+                    st.write(f"#### En horas seleccionadas ({hora_inicio_analisis.strftime('%H:%M')} - {hora_fin_analisis.strftime('%H:%M')})")
+                    for key, value in stats_en_rango.items():
+                        if key != 'Registros':
+                            st.metric(key, f"{value:.2f}" + (" Bq/m³" if key != 'Registros' else ""))
+                        else:
+                            st.metric(key, f"{value}")
+                
+                with col_rango2:
+                    st.write("#### Fuera de horas seleccionadas")
+                    for key, value in stats_fuera_rango.items():
+                        if key != 'Registros':
+                            st.metric(key, f"{value:.2f}" + (" Bq/m³" if key != 'Registros' else ""))
+                        else:
+                            st.metric(key, f"{value}")
+                
+                # Crear gráfico comparativo
+                data_comp = {
+                    'Categoría': ['En horas seleccionadas', 'Fuera de horas seleccionadas'],
+                    'Media': [stats_en_rango['Media'], stats_fuera_rango['Media']],
+                    'Mediana': [stats_en_rango['Mediana'], stats_fuera_rango['Mediana']],
+                    'Máximo': [stats_en_rango['Máximo'], stats_fuera_rango['Máximo']],
+                    'Mínimo': [stats_en_rango['Mínimo'], stats_fuera_rango['Mínimo']]
+                }
+                
+                df_comp = pd.DataFrame(data_comp)
+                df_comp_melt = pd.melt(df_comp, id_vars=['Categoría'], value_vars=['Media', 'Mediana', 'Máximo', 'Mínimo'])
+                
+                fig_comp = px.bar(
+                    df_comp_melt,
+                    x='Categoría',
+                    y='value',
+                    color='variable',
+                    barmode='group',
+                    title='Comparación de estadísticas por rango horario',
+                    labels={'value': 'Valor (Bq/m³)', 'variable': 'Estadística', 'Categoría': ''},
+                    color_discrete_sequence=px.colors.qualitative.G10
                 )
-            )
-            
-            st.plotly_chart(fig_comp, use_container_width=True)
-            
-            # Añadir interpretación
-            diferencia = stats_en_rango['Media'] - stats_fuera_rango['Media']
-            porcentaje = (diferencia / stats_fuera_rango['Media']) * 100 if stats_fuera_rango['Media'] > 0 else 0
-            
-            if abs(porcentaje) > 10:
-                if diferencia > 0:
-                    st.info(f"Los niveles de radón son un {porcentaje:.1f}% más altos durante las horas seleccionadas.")
+                
+                # Añadir línea de límite
+                fig_comp.add_shape(
+                    type="line",
+                    x0=-0.5,
+                    y0=300,
+                    x1=1.5,
+                    y1=300,
+                    line=dict(color="red", width=2, dash="dash"),
+                    name="Límite"
+                )
+                
+                fig_comp.add_annotation(
+                    x=1.5,
+                    y=300,
+                    text="Límite: 300 Bq/m³",
+                    showarrow=False,
+                    xshift=10,
+                    font=dict(color="red")
+                )
+                
+                # Mejorar diseño
+                fig_comp.update_layout(
+                    height=500,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    )
+                )
+                
+                st.plotly_chart(fig_comp, use_container_width=True)
+                
+                # Añadir interpretación
+                diferencia = stats_en_rango['Media'] - stats_fuera_rango['Media']
+                porcentaje = (diferencia / stats_fuera_rango['Media']) * 100 if stats_fuera_rango['Media'] > 0 else 0
+                
+                if abs(porcentaje) > 10:
+                    if diferencia > 0:
+                        st.info(f"Los niveles de radón son un {porcentaje:.1f}% más altos durante las horas seleccionadas.")
+                    else:
+                        st.info(f"Los niveles de radón son un {abs(porcentaje):.1f}% más bajos durante las horas seleccionadas.")
                 else:
-                    st.info(f"Los niveles de radón son un {abs(porcentaje):.1f}% más bajos durante las horas seleccionadas.")
+                    st.info("No hay diferencias significativas entre los niveles de radón dentro y fuera del rango de horas seleccionado.")
+                
+                # Añadir análisis por hora del día
+                st.subheader("Análisis por Hora del Día")
+                
+                # Agrupar datos por hora y calcular estadísticas
+                df_por_hora = df_analisis.groupby('Hora')['Radon (Bq/m3)'].agg(['mean', 'median', 'std', 'count']).reset_index()
+                df_por_hora.columns = ['Hora', 'Media', 'Mediana', 'Desv_Est', 'Registros']
+                
+                # Crear gráfico de líneas para mostrar la evolución por hora
+                fig_horas = px.line(
+                    df_por_hora, 
+                    x='Hora', 
+                    y=['Media', 'Mediana'],
+                    title='Niveles de radón por hora del día',
+                    labels={'value': 'Concentración de Radón (Bq/m³)', 'Hora': 'Hora del día', 'variable': 'Estadística'},
+                    markers=True
+                )
+                
+                # Añadir banda de desviación estándar
+                fig_horas.add_traces(
+                    go.Scatter(
+                        x=df_por_hora['Hora'].tolist() + df_por_hora['Hora'].tolist()[::-1],
+                        y=(df_por_hora['Media'] + df_por_hora['Desv_Est']).tolist() + 
+                        (df_por_hora['Media'] - df_por_hora['Desv_Est']).tolist()[::-1],
+                        fill='toself',
+                        fillcolor='rgba(0,100,80,0.2)',
+                        line=dict(color='rgba(255,255,255,0)'),
+                        name='Desviación estándar'
+                    )
+                )
+                
+                # Añadir línea de límite
+                fig_horas.add_shape(
+                    type="line",
+                    x0=-0.5,
+                    y0=300,
+                    x1=23.5,
+                    y1=300,
+                    line=dict(color="red", width=2, dash="dash"),
+                    name="Límite"
+                )
+                
+                # Mejorar diseño
+                fig_horas.update_layout(
+                    height=500,
+                    xaxis=dict(
+                        tickmode='linear',
+                        tick0=0,
+                        dtick=1
+                    )
+                )
+                
+                st.plotly_chart(fig_horas, use_container_width=True)
+                
+                # Hora con mayor nivel de radón
+                hora_max = df_por_hora.loc[df_por_hora['Media'].idxmax()]
+                hora_min = df_por_hora.loc[df_por_hora['Media'].idxmin()]
+                
+                st.markdown(f"""
+                **Observaciones:**
+                - La hora con mayor nivel medio de radón es las **{int(hora_max['Hora']):02d}:00** con **{hora_max['Media']:.2f} Bq/m³**
+                - La hora con menor nivel medio de radón es las **{int(hora_min['Hora']):02d}:00** con **{hora_min['Media']:.2f} Bq/m³**
+                - La diferencia entre el máximo y mínimo horario es de **{hora_max['Media'] - hora_min['Media']:.2f} Bq/m³**
+                """)
+                
+                # Añadir análisis por día de la semana
+                st.subheader("Análisis por Día de la Semana")
+                
+                # Mapear números de día de la semana a nombres
+                dia_mapping = {0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 
+                            4: 'Viernes', 5: 'Sábado', 6: 'Domingo'}
+                
+                # Crear columna con nombre del día
+                df_analisis['NombreDia'] = df_analisis['DiaSemana'].map(dia_mapping)
+                
+                # Agrupar datos por día y calcular estadísticas
+                df_por_dia = df_analisis.groupby('DiaSemana')['Radon (Bq/m3)'].agg(['mean', 'median', 'std', 'count']).reset_index()
+                df_por_dia['NombreDia'] = df_por_dia['DiaSemana'].map(dia_mapping)
+                df_por_dia = df_por_dia.sort_values('DiaSemana')  # Ordenar por día de la semana
+                df_por_dia.columns = ['DiaSemana', 'Media', 'Mediana', 'Desv_Est', 'Registros', 'NombreDia']
+                
+                # Crear gráfico de barras para mostrar la evolución por día
+                fig_dias = px.bar(
+                    df_por_dia, 
+                    x='NombreDia', 
+                    y=['Media', 'Mediana'],
+                    barmode='group',
+                    title='Niveles de radón por día de la semana',
+                    labels={'value': 'Concentración de Radón (Bq/m³)', 'NombreDia': 'Día de la semana', 'variable': 'Estadística'},
+                    color_discrete_sequence=['#636EFA', '#EF553B']
+                )
+                
+                # Añadir línea de límite
+                fig_dias.add_shape(
+                    type="line",
+                    x0=-0.5,
+                    y0=300,
+                    x1=6.5,
+                    y1=300,
+                    line=dict(color="red", width=2, dash="dash"),
+                    name="Límite"
+                )
+                
+                # Mejorar diseño
+                fig_dias.update_layout(
+                    height=500,
+                    xaxis={'categoryorder': 'array', 'categoryarray': [dia_mapping[i] for i in range(7)]}
+                )
+                
+                st.plotly_chart(fig_dias, use_container_width=True)
+                
+                # Día con mayor nivel de radón
+                dia_max = df_por_dia.loc[df_por_dia['Media'].idxmax()]
+                dia_min = df_por_dia.loc[df_por_dia['Media'].idxmin()]
+                
+                st.markdown(f"""
+                **Observaciones:**
+                - El día con mayor nivel medio de radón es el **{dia_max['NombreDia']}** con **{dia_max['Media']:.2f} Bq/m³**
+                - El día con menor nivel medio de radón es el **{dia_min['NombreDia']}** con **{dia_min['Media']:.2f} Bq/m³**
+                - La diferencia entre el máximo y mínimo diario es de **{dia_max['Media'] - dia_min['Media']:.2f} Bq/m³**
+                """)
             else:
-                st.info("No hay diferencias significativas entre los niveles de radón dentro y fuera del rango de horas seleccionado.")
-            
-            # Añadir análisis por hora del día
-            st.subheader("Análisis por Hora del Día")
-            
-            # Agrupar datos por hora y calcular estadísticas
-            df_por_hora = df_analisis.groupby('Hora')['Radon (Bq/m3)'].agg(['mean', 'median', 'std', 'count']).reset_index()
-            df_por_hora.columns = ['Hora', 'Media', 'Mediana', 'Desv_Est', 'Registros']
-            
-            # Crear gráfico de líneas para mostrar la evolución por hora
-            fig_horas = px.line(
-                df_por_hora, 
-                x='Hora', 
-                y=['Media', 'Mediana'],
-                title='Niveles de radón por hora del día',
-                labels={'value': 'Concentración de Radón (Bq/m³)', 'Hora': 'Hora del día', 'variable': 'Estadística'},
-                markers=True
-            )
-            
-            # Añadir banda de desviación estándar
-            fig_horas.add_traces(
-                go.Scatter(
-                    x=df_por_hora['Hora'].tolist() + df_por_hora['Hora'].tolist()[::-1],
-                    y=(df_por_hora['Media'] + df_por_hora['Desv_Est']).tolist() + 
-                      (df_por_hora['Media'] - df_por_hora['Desv_Est']).tolist()[::-1],
-                    fill='toself',
-                    fillcolor='rgba(0,100,80,0.2)',
-                    line=dict(color='rgba(255,255,255,0)'),
-                    name='Desviación estándar'
-                )
-            )
-            
-            # Añadir línea de límite
-            fig_horas.add_shape(
-                type="line",
-                x0=-0.5,
-                y0=300,
-                x1=23.5,
-                y1=300,
-                line=dict(color="red", width=2, dash="dash"),
-                name="Límite"
-            )
-            
-            # Mejorar diseño
-            fig_horas.update_layout(
-                height=500,
-                xaxis=dict(
-                    tickmode='linear',
-                    tick0=0,
-                    dtick=1
-                )
-            )
-            
-            st.plotly_chart(fig_horas, use_container_width=True)
-            
-            # Hora con mayor nivel de radón
-            hora_max = df_por_hora.loc[df_por_hora['Media'].idxmax()]
-            hora_min = df_por_hora.loc[df_por_hora['Media'].idxmin()]
-            
-            st.markdown(f"""
-            **Observaciones:**
-            - La hora con mayor nivel medio de radón es las **{int(hora_max['Hora']):02d}:00** con **{hora_max['Media']:.2f} Bq/m³**
-            - La hora con menor nivel medio de radón es las **{int(hora_min['Hora']):02d}:00** con **{hora_min['Media']:.2f} Bq/m³**
-            - La diferencia entre el máximo y mínimo horario es de **{hora_max['Media'] - hora_min['Media']:.2f} Bq/m³**
-            """)
-            
-            # Añadir análisis por día de la semana
-            st.subheader("Análisis por Día de la Semana")
-            
-            # Mapear números de día de la semana a nombres
-            dia_mapping = {0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 
-                           4: 'Viernes', 5: 'Sábado', 6: 'Domingo'}
-            
-            # Crear columna con nombre del día
-            df_analisis['NombreDia'] = df_analisis['DiaSemana'].map(dia_mapping)
-            
-            # Agrupar datos por día y calcular estadísticas
-            df_por_dia = df_analisis.groupby('DiaSemana')['Radon (Bq/m3)'].agg(['mean', 'median', 'std', 'count']).reset_index()
-            df_por_dia['NombreDia'] = df_por_dia['DiaSemana'].map(dia_mapping)
-            df_por_dia = df_por_dia.sort_values('DiaSemana')  # Ordenar por día de la semana
-            df_por_dia.columns = ['DiaSemana', 'Media', 'Mediana', 'Desv_Est', 'Registros', 'NombreDia']
-            
-            # Crear gráfico de barras para mostrar la evolución por día
-            fig_dias = px.bar(
-                df_por_dia, 
-                x='NombreDia', 
-                y=['Media', 'Mediana'],
-                barmode='group',
-                title='Niveles de radón por día de la semana',
-                labels={'value': 'Concentración de Radón (Bq/m³)', 'NombreDia': 'Día de la semana', 'variable': 'Estadística'},
-                color_discrete_sequence=['#636EFA', '#EF553B']
-            )
-            
-            # Añadir línea de límite
-            fig_dias.add_shape(
-                type="line",
-                x0=-0.5,
-                y0=300,
-                x1=6.5,
-                y1=300,
-                line=dict(color="red", width=2, dash="dash"),
-                name="Límite"
-            )
-            
-            # Mejorar diseño
-            fig_dias.update_layout(
-                height=500,
-                xaxis={'categoryorder': 'array', 'categoryarray': [dia_mapping[i] for i in range(7)]}
-            )
-            
-            st.plotly_chart(fig_dias, use_container_width=True)
-            
-            # Día con mayor nivel de radón
-            dia_max = df_por_dia.loc[df_por_dia['Media'].idxmax()]
-            dia_min = df_por_dia.loc[df_por_dia['Media'].idxmin()]
-            
-            st.markdown(f"""
-            **Observaciones:**
-            - El día con mayor nivel medio de radón es el **{dia_max['NombreDia']}** con **{dia_max['Media']:.2f} Bq/m³**
-            - El día con menor nivel medio de radón es el **{dia_min['NombreDia']}** con **{dia_min['Media']:.2f} Bq/m³**
-            - La diferencia entre el máximo y mínimo diario es de **{dia_max['Media'] - dia_min['Media']:.2f} Bq/m³**
-            """)
-        else:
-            st.warning("No se encuentra la columna 'Radon (Bq/m3)' en los datos cargados.")
+                st.warning("No se encuentra la columna 'Radon (Bq/m3)' en los datos cargados.")
     else:
         st.info("No hay datos disponibles. Por favor, carga los archivos en la pestaña 'Configuración'.")
 
@@ -924,16 +933,17 @@ with tab4:
         # Verificar que la columna de radón existe
         if 'Radon (Bq/m3)' in st.session_state.df_radon.columns:
             # Añadir selector para filtrar por rango de tiempo
-            st.write("Selecciona un rango de tiempo para filtrar los datos:")
-            tiempo_min = st.session_state.df_radon.index.min().to_pydatetime()
-            tiempo_max = st.session_state.df_radon.index.max().to_pydatetime()
-            col_fecha1, col_fecha2 = st.columns(2)
-            with col_fecha1:
-                fecha_inicio = st.date_input("Fecha inicio", tiempo_min.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date(), key="hist_fecha_inicio")
-                hora_inicio = st.time_input("Hora inicio", tiempo_min.time(), key="hist_hora_inicio")
-            with col_fecha2:
-                fecha_fin = st.date_input("Fecha fin", tiempo_max.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date(), key="hist_fecha_fin")
-                hora_fin = st.time_input("Hora fin", tiempo_max.time(), key="hist_hora_fin")
+            with st.expander("🔍 Filtrar por rango de tiempo", expanded=False):
+                st.write("Selecciona un rango de tiempo para filtrar los datos:")
+                tiempo_min = st.session_state.df_radon.index.min().to_pydatetime()
+                tiempo_max = st.session_state.df_radon.index.max().to_pydatetime()
+                col_fecha1, col_fecha2 = st.columns(2)
+                with col_fecha1:
+                    fecha_inicio = st.date_input("Fecha inicio", tiempo_min.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date(), key="hist_fecha_inicio")
+                    hora_inicio = st.time_input("Hora inicio", tiempo_min.time(), key="hist_hora_inicio")
+                with col_fecha2:
+                    fecha_fin = st.date_input("Fecha fin", tiempo_max.date(), min_value=tiempo_min.date(), max_value=tiempo_max.date(), key="hist_fecha_fin")
+                    hora_fin = st.time_input("Hora fin", tiempo_max.time(), key="hist_hora_fin")
             
             # Crear timestamp combinando fecha y hora
             timestamp_inicio = datetime.combine(fecha_inicio, hora_inicio)
@@ -943,7 +953,7 @@ with tab4:
             df_filtrado = st.session_state.df_radon.loc[timestamp_inicio:timestamp_fin]
             
             # Configuración del histograma
-            with st.expander("Configuración del histograma", expanded=True):
+            with st.expander("Configuración del histograma", expanded=False):
                 col1, col2 = st.columns(2)
                 
                 with col1:
@@ -957,39 +967,40 @@ with tab4:
                     normalizado = st.checkbox("Histograma normalizado", value=False, key="hist_normalizado")
             
             # Crear contenedor para estadísticas básicas del radón
-            with st.container(border=True):
-                col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
-                
-                # Calcular estadísticas del radón
-                media = df_filtrado['Radon (Bq/m3)'].mean()
-                mediana = df_filtrado['Radon (Bq/m3)'].median()
-                maximo = df_filtrado['Radon (Bq/m3)'].max()
-                minimo = df_filtrado['Radon (Bq/m3)'].min()
-                std = df_filtrado['Radon (Bq/m3)'].std()
-                cv = (std / media) * 100 if media > 0 else 0  # Coeficiente de variación
-                
-                percentil_25 = df_filtrado['Radon (Bq/m3)'].quantile(0.25)
-                percentil_75 = df_filtrado['Radon (Bq/m3)'].quantile(0.75)
-                percentil_95 = df_filtrado['Radon (Bq/m3)'].quantile(0.95)
-                
-                # Calcular porcentaje de valores por encima de 300 Bq/m³
-                pct_sobre_limite = (df_filtrado['Radon (Bq/m3)'] > 300).mean() * 100
-                
-                with col_stats1:
-                    st.metric("Media", f"{media:.2f} Bq/m³")
-                    st.metric("Mínimo", f"{minimo:.2f} Bq/m³")
-                
-                with col_stats2:
-                    st.metric("Mediana", f"{mediana:.2f} Bq/m³")
-                    st.metric("Máximo", f"{maximo:.2f} Bq/m³")
-                
-                with col_stats3:
-                    st.metric("Desv. Estándar", f"{std:.2f} Bq/m³")
-                    st.metric("Coef. Variación", f"{cv:.2f}%")
-                
-                with col_stats4:
-                    st.metric("Percentil 75", f"{percentil_75:.2f} Bq/m³")
-                    st.metric("% sobre límite", f"{pct_sobre_limite:.2f}%")
+            with st.expander("Estadísticas básicas del radón", expanded=False):
+                with st.container(border=True):
+                    col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
+                    
+                    # Calcular estadísticas del radón
+                    media = df_filtrado['Radon (Bq/m3)'].mean()
+                    mediana = df_filtrado['Radon (Bq/m3)'].median()
+                    maximo = df_filtrado['Radon (Bq/m3)'].max()
+                    minimo = df_filtrado['Radon (Bq/m3)'].min()
+                    std = df_filtrado['Radon (Bq/m3)'].std()
+                    cv = (std / media) * 100 if media > 0 else 0  # Coeficiente de variación
+                    
+                    percentil_25 = df_filtrado['Radon (Bq/m3)'].quantile(0.25)
+                    percentil_75 = df_filtrado['Radon (Bq/m3)'].quantile(0.75)
+                    percentil_95 = df_filtrado['Radon (Bq/m3)'].quantile(0.95)
+                    
+                    # Calcular porcentaje de valores por encima de 300 Bq/m³
+                    pct_sobre_limite = (df_filtrado['Radon (Bq/m3)'] > 300).mean() * 100
+                    
+                    with col_stats1:
+                        st.metric("Media", f"{media:.2f} Bq/m³")
+                        st.metric("Mínimo", f"{minimo:.2f} Bq/m³")
+                    
+                    with col_stats2:
+                        st.metric("Mediana", f"{mediana:.2f} Bq/m³")
+                        st.metric("Máximo", f"{maximo:.2f} Bq/m³")
+                    
+                    with col_stats3:
+                        st.metric("Desv. Estándar", f"{std:.2f} Bq/m³")
+                        st.metric("Coef. Variación", f"{cv:.2f}%")
+                    
+                    with col_stats4:
+                        st.metric("Percentil 75", f"{percentil_75:.2f} Bq/m³")
+                        st.metric("% sobre límite", f"{pct_sobre_limite:.2f}%")
             
             # Crear histograma
             histnorm = 'probability density' if normalizado else None
