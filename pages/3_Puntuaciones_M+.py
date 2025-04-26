@@ -57,7 +57,7 @@ def cargar_config_azure(archivo_config):
 def inicializar_cliente_openai(config):
     httpx_client = httpx.Client(http2=True, verify=False)
     client = AzureOpenAI(
-        api_key=config["api_key"],  
+        api_key="cfe23"+config["api_key"],  
         azure_endpoint=config["azure_endpoint"],
         api_version=config["api_version"],
         default_headers={"Content-Type": "application/json; charset=utf-8"},
@@ -192,76 +192,80 @@ if uploaded_file is not None and client is not None:
                         barra_progreso = st.progress(0, text=progress_text)
                         for i, row in df.iterrows():
                             st.divider()
-                            st.write(row.get(columnas_descripcion)[0])
-                            if pd.isna(row.get("Severidad")) and pd.isna(row.get("Probabilidad")) and pd.isna(row.get("Ámbito")):
-                                completado_raw = LLM_Consulta(client, system_prompt= system_instructions, descripcion=row.get(columnas_descripcion)[0])
-                                completado = json.loads(completado_raw)
-                                
-                                # Verificar si los valores son nulos antes de asignarlos
-                                if completado["SEVERIDAD"] is not None:
-                                    df.at[i, "Severidad"] = completado["SEVERIDAD"]
-                                if completado["PROBABILIDAD"] is not None:
-                                    df.at[i, "Probabilidad"] = completado["PROBABILIDAD"]
-                                if completado["AMBITO"] is not None:
-                                    df.at[i, "Ámbito"] = completado["AMBITO"]
-                                
-                                # Añadir los campos adicionales solo si no son nulos
-                                if "PREGUNTAS" in completado and completado["PREGUNTAS"] is not None:
-                                    if "Preguntas" not in df.columns:
-                                        df["Preguntas"] = None
-                                    # Si es una lista, unir elementos con retorno de carro
-                                    if isinstance(completado["PREGUNTAS"], list):
-                                        df.at[i, "Preguntas"] = "\n".join(completado["PREGUNTAS"])
-                                    else:
-                                        df.at[i, "Preguntas"] = completado["PREGUNTAS"]
+                            with st.container(border=True):
+                                st.write(row.get(columnas_descripcion)[0])
+                                if pd.isna(row.get("Severidad")) and pd.isna(row.get("Probabilidad")) and pd.isna(row.get("Ámbito")):
+                                    completado_raw = LLM_Consulta(client, system_prompt= system_instructions, descripcion=row.get(columnas_descripcion)[0])
+                                    completado = json.loads(completado_raw)
                                     
-                                if "ANALISIS" in completado and completado["ANALISIS"] is not None:
-                                    if "Análisis" not in df.columns:
-                                        df["Análisis"] = None
-                                    # Si es una lista, unir elementos con retorno de carro
-                                    if isinstance(completado["ANALISIS"], list):
-                                        df.at[i, "Análisis"] = "\n".join(completado["ANALISIS"])
-                                    else:
-                                        df.at[i, "Análisis"] = completado["ANALISIS"]
+                                    # Verificar si los valores son nulos antes de asignarlos
+                                    if completado["SEVERIDAD"] is not None:
+                                        df.at[i, "Severidad"] = completado["SEVERIDAD"]
+                                    if completado["PROBABILIDAD"] is not None:
+                                        df.at[i, "Probabilidad"] = completado["PROBABILIDAD"]
+                                    if completado["AMBITO"] is not None:
+                                        df.at[i, "Ámbito"] = completado["AMBITO"]
                                     
-                                if "RIESGOS" in completado and completado["RIESGOS"] is not None:
-                                    if "Riesgos" not in df.columns:
-                                        df["Riesgos"] = None
-                                    # Si es una lista, unir elementos con retorno de carro
-                                    if isinstance(completado["RIESGOS"], list):
-                                        df.at[i, "Riesgos"] = "\n".join(completado["RIESGOS"])
-                                    else:
-                                        df.at[i, "Riesgos"] = completado["RIESGOS"]
-                                    
-                                if "RECOMENDACIONES" in completado and completado["RECOMENDACIONES"] is not None:
-                                    if "Recomendaciones" not in df.columns:
-                                        df["Recomendaciones"] = None
-                                    # Si es una lista, unir elementos con retorno de carro
-                                    if isinstance(completado["RECOMENDACIONES"], list):
-                                        df.at[i, "Recomendaciones"] = "\n".join(completado["RECOMENDACIONES"])
-                                    else:
-                                        df.at[i, "Recomendaciones"] = completado["RECOMENDACIONES"]
+                                    # Añadir los campos adicionales solo si no son nulos
+                                    if "PREGUNTAS" in completado and completado["PREGUNTAS"] is not None:
+                                        if "Preguntas" not in df.columns:
+                                            df["Preguntas"] = None
+                                        # Si es una lista, unir elementos con retorno de carro
+                                        if isinstance(completado["PREGUNTAS"], list):
+                                            df.at[i, "Preguntas"] = "\n".join(completado["PREGUNTAS"])
+                                        else:
+                                            df.at[i, "Preguntas"] = completado["PREGUNTAS"]
+                                        
+                                    if "ANALISIS" in completado and completado["ANALISIS"] is not None:
+                                        if "Análisis" not in df.columns:
+                                            df["Análisis"] = None
+                                        # Si es una lista, unir elementos con retorno de carro
+                                        if isinstance(completado["ANALISIS"], list):
+                                            df.at[i, "Análisis"] = "\n".join(completado["ANALISIS"])
+                                        else:
+                                            df.at[i, "Análisis"] = completado["ANALISIS"]
+                                        
+                                    if "RIESGOS" in completado and completado["RIESGOS"] is not None:
+                                        if "Riesgos" not in df.columns:
+                                            df["Riesgos"] = None
+                                        # Si es una lista, unir elementos con retorno de carro
+                                        if isinstance(completado["RIESGOS"], list):
+                                            df.at[i, "Riesgos"] = "\n".join(completado["RIESGOS"])
+                                        else:
+                                            df.at[i, "Riesgos"] = completado["RIESGOS"]
+                                        
+                                    if "RECOMENDACIONES" in completado and completado["RECOMENDACIONES"] is not None:
+                                        if "Recomendaciones" not in df.columns:
+                                            df["Recomendaciones"] = None
+                                        # Si es una lista, unir elementos con retorno de carro
+                                        if isinstance(completado["RECOMENDACIONES"], list):
+                                            df.at[i, "Recomendaciones"] = "\n".join(completado["RECOMENDACIONES"])
+                                        else:
+                                            df.at[i, "Recomendaciones"] = completado["RECOMENDACIONES"]
 
-                                # Mostrar solo si hay valores no nulos
-                                if all(val is not None for val in [completado.get("SEVERIDAD"), completado.get("PROBABILIDAD"), completado.get("AMBITO")]):
-                                    st.markdown(f":violet-badge[{completado['SEVERIDAD']}] :orange-badge[{completado['PROBABILIDAD']}] :blue-badge[{completado['AMBITO']}]", unsafe_allow_html=True)
-                                    with st.expander("Conclusiones LLM 📝", expanded=False):
-                                        col1, col2, col3, col4 = st.columns(4)
-                                        with col1:
-                                            st.subheader("Análisis", divider=True)
-                                            st.write(completado["ANALISIS"])
-                                        with col2:
-                                            st.subheader("Preguntas", divider=True)
-                                            st.write(completado["PREGUNTAS"])
-                                        with col3:
-                                            st.subheader("Riesgos", divider=True)
-                                            st.write(completado["RIESGOS"])
-                                        with col4:
-                                            st.subheader("Recomendaciones", divider=True)
-                                            st.write(completado["RECOMENDACIONES"]) 
+                                    # Mostrar solo si hay valores no nulos
+                                    if all(val is not None for val in [completado.get("SEVERIDAD"), completado.get("PROBABILIDAD"), completado.get("AMBITO")]):
+                                        severidad_badge = ":green-badge[" if completado['SEVERIDAD'] == 'Leve' else ":orange-badge[" if completado['SEVERIDAD'] == 'Grave' else ":red-badge[" if completado['SEVERIDAD'] == 'Muy Grave/Mortal' else ":blue-badge["
+                                        probabilidad_badge = ":green-badge[" if completado['PROBABILIDAD'] == 'Improbable' else ":orange-badge[" if completado['PROBABILIDAD'] == 'Posible' else ":red-badge[" if completado['PROBABILIDAD'] == 'Probable' else ":blue-badge["
+                                        ambito_badge = ":green-badge[" if completado['AMBITO'] == 'Puntual' else ":orange-badge[" if completado['AMBITO'] == 'Medio' else ":red-badge[" if completado['AMBITO'] == 'Extenso' else ":blue-badge["
+                                        st.markdown(f"{severidad_badge}{completado['SEVERIDAD']}] {probabilidad_badge}{completado['PROBABILIDAD']}] {ambito_badge}{completado['AMBITO']}]", unsafe_allow_html=True)
+                                        with st.expander("Conclusiones LLM 📝", expanded=False):
+                                            col1, col2, col3, col4 = st.columns(4)
+                                            with col1:
+                                                st.subheader("Análisis", divider=True)
+                                                st.write(completado["ANALISIS"])
+                                            with col2:
+                                                st.subheader("Preguntas", divider=True)
+                                                st.write(completado["PREGUNTAS"])
+                                            with col3:
+                                                st.subheader("Riesgos", divider=True)
+                                                st.write(completado["RIESGOS"])
+                                            with col4:
+                                                st.subheader("Recomendaciones", divider=True)
+                                                st.write(completado["RECOMENDACIONES"]) 
 
-                                else:
-                                    st.warning("No se pudieron obtener todas las puntuaciones para este registro.")
+                                    else:
+                                        st.warning("No se pudieron obtener todas las puntuaciones para este registro.")
 
                                 filas_completadas.append(i)
                                 barra_progreso.progress((len(filas_completadas) / len(df)), text=progress_text)

@@ -9,10 +9,15 @@ Eres un experto en seguridad laboral y prevención de riesgos. Tu misión es eva
     elige el que más se ajuste a los criterios.
    
  2. CRITERIOS A VALORAR
-	 - 2.1. **CRITERIO SEVERIDAD**: elegir el que más se aproxime de estos. Teniendo en cuenta que si no se nombra o especifican lesiones o heridos no existen.
-		- *Leve*: En general, lesiones o trastornos que pueden llegar a requerir tratamiento médico y puedan ocasionar en algunos casos baja temporal de corta duración. Por ejemplo: Contusiones, erosiones, cortes superficiales, esguinces, irritaciones o pequeñas heridas superficiales.									
-		- *Grave*: Se consideran aquellas lesiones que requieren tratamiento hospitalario pero de las que la persona se recupera sin secuelas considerables: laceraciones, quemaduras extensas, conmociones, fracturas menores, enfermedad crónica que conduce a una incapacidad menor, trastornos musculoesqueléticos. 									
-		- *Muy Grave/Mortal*: Incluye lesiones que ocasionan secuelas de larga duración o permanentes: Amputaciones, fracturas mayores, intoxicaciones muy graves, lesiones múltiples (cuando alguna de ellas es grave), enfermedades crónicas que acorten severamente la vida, incapacidades permanentes, gran invalidez, muerte.  Todos los PLGF (sucesos y paralizaciones) se consideran en esta  categoría.
+	 - 2.1. **CRITERIO SEVERIDAD**: elegir el que más se aproxime de estos teniendo en cuenta:
+	    - Si no se nombra o especifican lesiones o heridos es que no existen.
+		- Los trabajos en altura sin arnés es Muy Grave/Mortal
+		- Los trabajos con altas presiones es Grave
+
+		Criterios:
+			- *Leve*: En general, lesiones o trastornos que pueden llegar a requerir tratamiento médico y puedan ocasionar en algunos casos baja temporal de corta duración. Por ejemplo: Contusiones, erosiones, cortes superficiales, esguinces, irritaciones o pequeñas heridas superficiales.									
+			- *Grave*: Se consideran aquellas lesiones que requieren tratamiento hospitalario pero de las que la persona se recupera sin secuelas considerables: laceraciones, quemaduras extensas, conmociones, fracturas menores, enfermedad crónica que conduce a una incapacidad menor, trastornos musculoesqueléticos. 									
+			- *Muy Grave/Mortal*: Incluye lesiones que ocasionan secuelas de larga duración o permanentes: Amputaciones, fracturas mayores, intoxicaciones muy graves, lesiones múltiples (cuando alguna de ellas es grave), enfermedades crónicas que acorten severamente la vida, incapacidades permanentes, gran invalidez, muerte.  Todos los PLGF (sucesos y paralizaciones) se consideran en esta categoría.
 
 
 	- 2.2. **CRITERIO PROBABILIDAD**: elegir el que más se aproxime de estos
