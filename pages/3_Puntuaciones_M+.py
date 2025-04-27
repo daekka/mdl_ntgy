@@ -80,7 +80,7 @@ def LLM_Consulta(client, system_prompt = "", descripcion =""):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": descripcion},
             ],
-            temperature=0.2 ,
+            temperature=0.3 ,
             #response_format=puntuaciones,
             response_format={"type": "json_object"},
         )
@@ -273,7 +273,15 @@ if uploaded_file is not None and client is not None:
 
                         if filas_completadas:
                             st.subheader("Registros completados:")
-                            st.dataframe(df.loc[filas_completadas])
+                            # Mostrar el dataframe con todas las columnas, no solo las básicas
+                            cols_to_display = ["Severidad", "Probabilidad", "Ámbito", "Preguntas", "Análisis", "Riesgos", "Recomendaciones"]
+                            # Asegurarse de mostrar también la columna de descripción
+                            for col in columnas_descripcion:
+                                if col in df.columns:
+                                    cols_to_display.insert(0, col)
+                            # Filtrar solo las columnas que existen en el dataframe
+                            cols_to_display = [col for col in cols_to_display if col in df.columns]
+                            st.dataframe(df.loc[filas_completadas, cols_to_display])
                         else:
                             st.info("No se encontraron registros para completar.")
 
