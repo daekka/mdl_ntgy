@@ -138,7 +138,7 @@ if 'df_radon' not in st.session_state:
 if 'df_meteorologico' not in st.session_state:
     st.session_state.df_meteorologico = None
 if 'hora_inicial' not in st.session_state:
-    st.session_state.hora_inicial = datetime.strptime('10:15', '%H:%M').time()
+    st.session_state.hora_inicial = datetime.strptime('09:30', '%H:%M').time()
 if 'hora_linea1' not in st.session_state:
     st.session_state.hora_linea1 = datetime.strptime('07:00', '%H:%M').time()
 if 'hora_linea2' not in st.session_state:
@@ -174,7 +174,7 @@ with tab0:
         nuevo_archivo = st.file_uploader("📇Cargar archivo de datos de radón", type=["txt"], key="nuevo_radon")
         
     with col2:
-        nueva_fecha = st.date_input("📆 Fecha inicial", datetime(2025, 4, 21).date(), key="nueva_fecha")
+        nueva_fecha = st.date_input("📆 Fecha inicial", datetime(2025, 4, 29).date(), key="nueva_fecha")
         nueva_hora = st.time_input("🕒 Hora inicial", st.session_state.hora_inicial, key="nueva_hora")
         
     with col3:
