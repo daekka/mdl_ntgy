@@ -1,4 +1,5 @@
 streamlit
+streamlit-calendar
 pandas
 openpyxl
 xlsxwriter
